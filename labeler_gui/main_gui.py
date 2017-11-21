@@ -1,34 +1,20 @@
 import os
-from glob import glob
 from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import showerror, showinfo
 from tkinter.font import Font
-
 from PIL import Image, ImageTk
-
 from deprecated.menubar import file_menu_exit_callback as exit_callback
-from myeuclid_gui.init_class_select_panel import init_class_select_panel
-from myeuclid_util.ImageLoader import ImageLoader
-from myeuclid_util.gen_colors import gen_colors
-from myeuclid_util.label_box import LabelBox
+from labeler_gui.init_class_select_panel import init_class_select_panel
+from labeler_util.ImageLoader import ImageLoader
+from labeler_util.gen_colors import gen_colors
+from labeler_util.label_box import LabelBox
 
 
-# The YOLO format
-# All values (numerical or strings) are separated via spaces,
-# each row corresponds to one object. The 5 columns represent:
-#
-# Values    Name      Description
-# ----------------------------------------------------------------------------
-#   1    Class ID     Describes the class number of object, as an integer number (0 based)
-#   1    Center_X     Float from 0 to 1, X coordinate of b-box center, normalised to image width
-#   1    Center_Y     Float from 0 to 1, Y coordinate of b-box center, normalised to image height
-#   1    Bbox_Width   Float from 0 to 1, Width of b-box, normalised to image width
-#   1    Bbox_Height  Float from 0 to 1, Height of b-box, normalised to image height
-# -------------------------------------------------------------------------------
 
 
-class MyEuclid(object):
+
+class Labeler(object):
     def __init__(self, p_cfg):
         # 外部函数相关变量
         self.cfg = p_cfg  # 加载外部配置

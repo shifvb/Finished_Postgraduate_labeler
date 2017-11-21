@@ -4,7 +4,10 @@ import time
 import datetime
 import skimage
 from skimage import transform
-WIDTH_SCALE=4#将人体PET图像按比例放大多少倍 默认放大四倍
+
+WIDTH_SCALE = 4  # 将人体PET图像按比例放大多少倍 默认放大四倍
+
+
 def _read_dicom_series(directory, filepattern="PT_*"):
     '''
     读取dicom格式的图像
@@ -26,19 +29,21 @@ def _read_dicom_series(directory, filepattern="PT_*"):
     ConstPixelDims = (int(RefDs.Rows), int(RefDs.Columns), len(lstFilesDCM))
     # The array is sized based on 'ConstPixelDims'
     ArrayDicom = np.zeros(ConstPixelDims, dtype=RefDs.pixel_array.dtype)
-    slopes=np.zeros(ConstPixelDims[2])
+    slopes = np.zeros(ConstPixelDims[2])
     # loop through all the DICOM files
     for filenameDCM in lstFilesDCM:
         # read the file
         ds = dicom.read_file(filenameDCM)
         # store the raw image data
         ArrayDicom[:, :, lstFilesDCM.index(filenameDCM)] = ds.pixel_array
-        slopes[lstFilesDCM.index(filenameDCM)]=ds.get('RescaleSlope')
-    return ArrayDicom,RefDs,slopes
+        slopes[lstFilesDCM.index(filenameDCM)] = ds.get('RescaleSlope')
+    return ArrayDicom, RefDs, slopes
+
+
 def getASuv(filePath=r'E:\pyWorkspace\testDataset\PT00998-2\5\PT_128'):
     meta = dicom.read_file(filePath)
-    pixel=meta.pixel_array
-    slope=meta.get('RescaleSlope')
+    pixel = meta.pixel_array
+    slope = meta.get('RescaleSlope')
     weightKg = meta.get('PatientWeight')
     # 患者身高
     heightCm = meta.get('PatientSize') * 100  # 身高以厘米为单位
@@ -69,7 +74,8 @@ def getASuv(filePath=r'E:\pyWorkspace\testDataset\PT00998-2\5\PT_128'):
     # suv=np.uint8(suvLbm)
     return suvLbm
 
-def _calSuv(pixels,meta,slopes):
+
+def _calSuv(pixels, meta, slopes):
     '''
     计算SUV值
     :param pixels: 图像的像素点值矩阵
@@ -104,56 +110,57 @@ def _calSuv(pixels,meta,slopes):
     else:
         lbmKg = 1.10 * weightKg - 120 * (weightKg / heightCm) ** 2
 
-    suvLbm=np.zeros(pixels.shape)
+    suvLbm = np.zeros(pixels.shape)
     for i in range(pixels.shape[2]):
-        suvLbm[:,:,i] = pixels[:,:,i]*slopes[i] * lbmKg * 1000 / actualActivity
+        suvLbm[:, :, i] = pixels[:, :, i] * slopes[i] * lbmKg * 1000 / actualActivity
 
-    return  suvLbm
+    return suvLbm
+
 
 def getSUV(path):
-
     '''
     计算给定路径下所有PET图像的SUV值，并进行不同维度上的单位化
     :param path: PET图像序列的路径
     :return: numpy三维数组，表示一个人体各处的SUV值
     '''
-    pixels,meta,slopes=_read_dicom_series(path)
-    suvLbm=_calSuv(pixels,meta,slopes)
+    pixels, meta, slopes = _read_dicom_series(path)
+    suvLbm = _calSuv(pixels, meta, slopes)
 
-    pixelSpacing=meta.get('PixelSpacing')
-    sliceThickness=float(meta.get('SliceThickness'))
-    suvFullOnSlice=np.zeros(np.multiply(suvLbm.shape,[WIDTH_SCALE,WIDTH_SCALE,1]))
+    pixelSpacing = meta.get('PixelSpacing')
+    sliceThickness = float(meta.get('SliceThickness'))
+    suvFullOnSlice = np.zeros(np.multiply(suvLbm.shape, [WIDTH_SCALE, WIDTH_SCALE, 1]))
 
-    for i in range(suvFullOnSlice.shape[2]):#逐层插值
-        suvFullOnSlice[:,:,i]=skimage.transform.rescale(suvLbm[:,:,i],[WIDTH_SCALE,WIDTH_SCALE])
+    for i in range(suvFullOnSlice.shape[2]):  # 逐层插值
+        suvFullOnSlice[:, :, i] = skimage.transform.rescale(suvLbm[:, :, i], [WIDTH_SCALE, WIDTH_SCALE])
 
-    sliceScale=WIDTH_SCALE*sliceThickness/pixelSpacing[0]
-    suvFull=np.zeros(np.int16(np.multiply(suvFullOnSlice.shape,[1,1,sliceScale])))
-    for i in range (suvFull.shape[1]):#层间插值
-        suvFull[i,:,:]=skimage.transform.resize((suvFullOnSlice[i,:,:]),[suvFull.shape[0],suvFull.shape[2]])
+    sliceScale = WIDTH_SCALE * sliceThickness / pixelSpacing[0]
+    suvFull = np.zeros(np.int16(np.multiply(suvFullOnSlice.shape, [1, 1, sliceScale])))
+    for i in range(suvFull.shape[1]):  # 层间插值
+        suvFull[i, :, :] = skimage.transform.resize((suvFullOnSlice[i, :, :]), [suvFull.shape[0], suvFull.shape[2]])
     suvFull = np.transpose(suvFull, (0, 2, 1))
-    return  suvFull
+    return suvFull
+
+
 def getCT(path):
+    pixels, meta, slopes = _read_dicom_series(path)
+    suvLbm = _calSuv(pixels, meta, slopes)
 
-    pixels,meta,slopes=_read_dicom_series(path)
-    suvLbm=_calSuv(pixels,meta,slopes)
+    pixelSpacing = meta.get('PixelSpacing')
+    sliceThickness = float(meta.get('SliceThickness'))
+    suvFullOnSlice = np.zeros(np.multiply(suvLbm.shape, [WIDTH_SCALE, WIDTH_SCALE, 1]))
 
-    pixelSpacing=meta.get('PixelSpacing')
-    sliceThickness=float(meta.get('SliceThickness'))
-    suvFullOnSlice=np.zeros(np.multiply(suvLbm.shape,[WIDTH_SCALE,WIDTH_SCALE,1]))
+    for i in range(suvFullOnSlice.shape[2]):  # 逐层插值
+        suvFullOnSlice[:, :, i] = skimage.transform.rescale(suvLbm[:, :, i], [WIDTH_SCALE, WIDTH_SCALE])
 
-    for i in range(suvFullOnSlice.shape[2]):#逐层插值
-        suvFullOnSlice[:,:,i]=skimage.transform.rescale(suvLbm[:,:,i],[WIDTH_SCALE,WIDTH_SCALE])
-
-    sliceScale=WIDTH_SCALE*sliceThickness/pixelSpacing[0]
-    suvFull=np.zeros(np.int16(np.multiply(suvFullOnSlice.shape,[1,1,sliceScale])))
-    for i in range (suvFull.shape[1]):#层间插值
-        suvFull[i,:,:]=skimage.transform.resize((suvFullOnSlice[i,:,:]),[suvFull.shape[0],suvFull.shape[2]])
+    sliceScale = WIDTH_SCALE * sliceThickness / pixelSpacing[0]
+    suvFull = np.zeros(np.int16(np.multiply(suvFullOnSlice.shape, [1, 1, sliceScale])))
+    for i in range(suvFull.shape[1]):  # 层间插值
+        suvFull[i, :, :] = skimage.transform.resize((suvFullOnSlice[i, :, :]), [suvFull.shape[0], suvFull.shape[2]])
     suvFull = np.transpose(suvFull, (0, 2, 1))
-    return  suvFull
+    return suvFull
 
 
-def testSUV() :
+def testSUV():
     rootP = 'F:\数据集\淋巴瘤原始更多\淋巴瘤图像'  # 将这里改成所有文件的根目录
     patients = ['PT00998-2', 'PT01282-4', 'PT02522-3', 'PT05738-2', 'PT06044-2',
                 'PT38947', 'PT39061', 'PT39188', 'PT39342', 'PT39387', 'PT39520',
@@ -180,10 +187,3 @@ if __name__ == '__main__':
     for i in range(len(patients)):
         tPath = os.path.join(rootP, patients[i], str(4))
         imgs = getCT(path=tPath)
-
-
-
-
-
-
-
