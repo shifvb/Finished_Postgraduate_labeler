@@ -1,9 +1,9 @@
 import os
-import pydicom
-from pydicom.errors import InvalidDicomError
 import numpy as np
+import pydicom
 from PIL import Image
-from myeuclid_util.SUV import getSUV
+from pydicom.errors import InvalidDicomError
+from myeuclid_util.SUV_2 import getASuv  # todo: moveit
 
 __all__ = ['ImageLoader']
 _suffix = ".png"
@@ -14,7 +14,6 @@ class ImageLoader(object):
         self._ct_img_list = None
         self._suv_img_list = None
         self._pet_img_list = None
-        self._suv2_img_list = None  # todo delete it
 
     def load_image(self, mode: str, output_image_suffix: str,
                    ct_path=None, ct_output_folder_name=None,
@@ -27,15 +26,13 @@ class ImageLoader(object):
             self._ct_img_list = dicom_to_png(ct_path, ct_output_folder_name)
             self._suv_img_list = self._dicom_to_suv(pet_path, suv_output_folder_name)
             self._pet_img_list = self._dicom_to_pet(pet_path, pet_output_folder_name)
-            self._suv2_img_list = self._dicom_to_suv2(pet_path, "suv2_image_data") # todo: moveit
 
-    def _dicom_to_suv2(self, input_folder: str, output_folder_name: str) -> tuple:
+    def _dicom_to_suv(self, input_folder: str, output_folder_name: str) -> tuple:
         # 如果输出文件夹不存在，那么久创建输出文件夹
         abs_output_folder = os.path.join(input_folder, output_folder_name)
         if not os.path.isdir(abs_output_folder):
             os.mkdir(abs_output_folder)
         # 遍历文件夹内所有PET文件
-        from myeuclid_util.SUV_2 import getASuv  # todo: moveit
         succeed_list = list()
         abs_output_folder = os.path.join(input_folder, output_folder_name)
         for filename in os.listdir(input_folder):
@@ -53,10 +50,7 @@ class ImageLoader(object):
                 _arr = np.array(_arr, dtype=np.uint8)  # 改变类型 np.float64 -> np.uint8
                 Image.fromarray(_arr).save(abs_output_filename)
                 succeed_list.append(abs_output_filename)
-        # todo: remove it
-        print("suv2: ", succeed_list)
         return tuple(succeed_list)
-
 
     def _dicom_to_pet(self, input_folder: str, output_folder_name: str) -> tuple:
         # 如果输出文件夹不存在，那么久创建输出文件夹
@@ -75,64 +69,37 @@ class ImageLoader(object):
         # 返回所有成功的输出图像的绝对路径
         return tuple(succeed_list)
 
-    def _dicom_to_suv(self, input_folder: str, output_folder_name: str) -> tuple:
-        # # 如果输出文件夹不存在，那么久创建输出文件夹
-        # abs_output_folder = os.path.join(input_folder, output_folder_name)
-        # if not os.path.isdir(abs_output_folder):
-        #     os.mkdir(abs_output_folder)
-        # # 遍历文件夹内所有PET文件
-        # from myeuclid_util.SUV_2 import getASuv  # todo: moveit
-        # succeed_list = list()
-        # abs_output_folder = os.path.join(input_folder, output_folder_name)
-        # for filename in os.listdir(input_folder):
-        #     abs_filename = os.path.join(input_folder, filename)
-        #     abs_output_filename = os.path.join(abs_output_folder, filename + _suffix)
-        #     if os.path.isfile(abs_filename) and filename.startswith("PT"):
-        #         _arr = getASuv(abs_filename)  # 计算SUV值
-        #         _mask = np.array(_arr > 2, dtype=np.uint8)
-        #         _arr *= _mask  # SUV < 2.0 的全部置为0\
-        #         if _arr.min() == _arr.max():  # 归一化
-        #             _arr = np.zeros(shape=_arr.shape, dtype=np.uint8)  # 最大值等于最小值，意味着整个数组都是0
-        #         else:
-        #             _arr = (_arr - _arr.min()) / (_arr.max() - _arr.min()) * 255  # 最大值等于最小值，正常归一化
-        #         _arr = np.array(_arr, dtype=np.uint8)  # 改变类型 np.float64 -> np.uint8
-        #         Image.fromarray(_arr).save(abs_output_filename)
-        #         succeed_list.append(abs_output_filename)
-        # return tuple(succeed_list)
-
-
-        # 如果输出文件夹不存在，那么久创建输出文件夹
-        abs_output_folder = os.path.join(input_folder, output_folder_name)
-        if not os.path.isdir(abs_output_folder):
-            os.mkdir(abs_output_folder)
-        abs_output_folder = os.path.join(input_folder, output_folder_name)
-        # 计算所有PET图像对应的输出文件的绝对路径
-        abs_output_img_paths = [os.path.join(abs_output_folder, _ + _suffix) for _ in os.listdir(input_folder)
-                                if os.path.isfile(os.path.join(input_folder, _)) and _.startswith("PT")]
-        # 计算输入文件夹内的PET图像的SUV值
-        imgs = getSUV(input_folder)
-        assert len(imgs) == len(abs_output_img_paths)
-        # 将所有 SUV <= 2.0 的像素置为0
-        _mask = np.array(imgs > 2, dtype=np.uint8)
-        imgs *= _mask
-        succeed_list = []
-        # 遍历生成的suv数组（保存了所有图像的信息）
-        for i in range(len(imgs)):
-            abs_output_img_path = abs_output_img_paths[i]  # 得到输出文件绝对路径
-            if os.path.exists(abs_output_img_path):  # 如果存在就跳过这个图像的输出
-                succeed_list.append(abs_output_img_path)
-                continue
-            # 保存图像
-            img_data = imgs[i]
-            if not img_data.max() == img_data.min():  # 如果相等则整个数组都是0
-                img_data = (img_data - img_data.min()) / (img_data.max() - img_data.min()) * 255  # 正则化
-            img_data = np.array(img_data, dtype=np.uint8)  # 转换诚uint8格式
-            Image.fromarray(img_data).save(abs_output_img_path)
-            succeed_list.append(abs_output_img_path)
-        # 返回列表
-        # todo remove it
-        print("suv: ", succeed_list)
-        return tuple(succeed_list)
+        # def deprecated_dicom_to_suv(self, input_folder: str, output_folder_name: str) -> tuple:
+        #     # 如果输出文件夹不存在，那么久创建输出文件夹
+        #     abs_output_folder = os.path.join(input_folder, output_folder_name)
+        #     if not os.path.isdir(abs_output_folder):
+        #         os.mkdir(abs_output_folder)
+        #     abs_output_folder = os.path.join(input_folder, output_folder_name)
+        #     # 计算所有PET图像对应的输出文件的绝对路径
+        #     abs_output_img_paths = [os.path.join(abs_output_folder, _ + _suffix) for _ in os.listdir(input_folder)
+        #                             if os.path.isfile(os.path.join(input_folder, _)) and _.startswith("PT")]
+        #     # 计算输入文件夹内的PET图像的SUV值
+        #     imgs = getSUV(input_folder)
+        #     assert len(imgs) == len(abs_output_img_paths)
+        #     # 将所有 SUV <= 2.0 的像素置为0
+        #     _mask = np.array(imgs > 2, dtype=np.uint8)
+        #     imgs *= _mask
+        #     succeed_list = []
+        #     # 遍历生成的suv数组（保存了所有图像的信息）
+        #     for i in range(len(imgs)):
+        #         abs_output_img_path = abs_output_img_paths[i]  # 得到输出文件绝对路径
+        #         if os.path.exists(abs_output_img_path):  # 如果存在就跳过这个图像的输出
+        #             succeed_list.append(abs_output_img_path)
+        #             continue
+        #         # 保存图像
+        #         img_data = imgs[i]
+        #         if not img_data.max() == img_data.min():  # 如果相等则整个数组都是0
+        #             img_data = (img_data - img_data.min()) / (img_data.max() - img_data.min()) * 255  # 正则化
+        #         img_data = np.array(img_data, dtype=np.uint8)  # 转换诚uint8格式
+        #         Image.fromarray(img_data).save(abs_output_img_path)
+        #         succeed_list.append(abs_output_img_path)
+        #     # 返回列表
+        #     return tuple(succeed_list)
 
 
 def dicom_to_png(input_folder: str, output_folder_name: str) -> tuple:
@@ -192,5 +159,5 @@ def _dicom_to_png(dicom_file_path: str, output_folder: str) -> tuple:
 
 
 if __name__ == '__main__':
-    r = ImageLoader()._dicom_to_suv(r"G:\临时空间\PT00998-2\5", "suv_image_data_v2")
+    r = ImageLoader().deprecated_dicom_to_suv(r"G:\临时空间\PT00998-2\5", "suv_image_data_v2")
     print(r)

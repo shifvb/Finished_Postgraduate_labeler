@@ -92,21 +92,21 @@ class MyEuclid(object):
         self.mouse_position_label.config(text=('x: {}, y: {}'.format(event.x, event.y)))
         # CT图像指示线
         self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
-        self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=2, fill='white')
+        self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
-        self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=2, fill='white')
+        self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
             self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
-            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, width=2, fill='white')
+            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
             self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
-            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=2, fill='white')
+            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
             # PET图像指示线
             self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
-            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, width=2, fill='white')
+            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
             self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
-            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=2, fill='white')
+            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
 
         # 画标签框
         if self.mouse_clicked:
@@ -293,7 +293,7 @@ class MyEuclid(object):
         self._load_image()
         self._load_labels()
 
-    def save_label_btn_callback(self):
+    def save_label_btn_callback(self, *args):
         """navigation面板 保存当前图片标签按钮 callback"""
         # 没有加载图像此按钮无效
         if not self.load_mode:
@@ -348,13 +348,6 @@ class MyEuclid(object):
                 Image.open(suv_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
             self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
-            # todo: moveit
-            suv2_image_path = self.image_loader._suv2_img_list[self.image_cursor - 1]
-            self.suv2_tk_img = ImageTk.PhotoImage(
-                Image.open(suv2_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.CUBIC))
-            self.opt_panel.config(width=self._PSIZE, height=self._PSIZE)
-            self.opt_panel.create_image(0, 0, image=self.suv2_tk_img, anchor=NW)
-
             # 加载PET图像
             pet_image_path = self.pet_image_list[self.image_cursor - 1]
             self.pet_tk_img = ImageTk.PhotoImage(
@@ -432,11 +425,12 @@ class MyEuclid(object):
         self.root.bind("<Escape>", self.key_esc_callback)  # press <Escape> to cancel current bbox
         self.root.bind("<Left>", self.prev_image_btn_callback)  # press 'Left Arrow' to go backforward
         self.root.bind("<Right>", self.next_image_btn_callback)  # press 'Right Arrow' to go forward
+        self.root.bind("<Control-KeyPress-s>", self.save_label_btn_callback)
 
         # 1.1 CT图像面板
         ct_image_frame = LabelFrame(self.root, text="CT")
         ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
-        self.ct_canvas = Canvas(ct_image_frame, cursor='tcross', height=self._PSIZE, width=self._PSIZE)
+        self.ct_canvas = Canvas(ct_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.ct_canvas.bind("<Button-1>", self.mouse_click_callback)
         self.ct_canvas.bind("<Motion>", self.mouse_move_callback)
         self.ct_canvas.grid(row=0, column=0)
