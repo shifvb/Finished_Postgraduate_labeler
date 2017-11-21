@@ -6,12 +6,10 @@ from tkinter.font import Font
 from PIL import Image, ImageTk
 from deprecated.menubar import file_menu_exit_callback as exit_callback
 from labeler_gui.init_class_select_panel import init_class_select_panel
+from labeler_gui.MyCanvas import MyCanvas
 from labeler_util.ImageLoader import ImageLoader
 from labeler_util.gen_colors import gen_colors
 from labeler_util.label_box import LabelBox
-
-
-
 
 
 class Labeler(object):
@@ -458,17 +456,33 @@ class Labeler(object):
 
         # 3.控制/显示当前标签类型的面板
         init_class_select_panel(self)
-        self.labelControlPanelFrame = LabelFrame(self.root, text='标签类选择')
-        self.labelControlPanelFrame.grid(row=0, column=3, sticky=NW, padx=5)
+        label_control_frame = LabelFrame(self.root, text='标签类选择')
+        label_control_frame.grid(row=0, column=3, sticky=NW)
+        # 3.1 显示选择标签的按钮
+        label_scroll_frame = Frame(label_control_frame)
+        label_scroll_frame.grid(row=0, column=0)
+        label_ctrl_scrollbar = Scrollbar(label_scroll_frame)
+        label_ctrl_scrollbar.grid(row=0, column=1, sticky=NS)
+        label_control_canvas = MyCanvas(label_scroll_frame, width=150, height=460)
+        label_control_canvas.grid(row=0, column=0, sticky=NSEW)
         for i in range(self.cfg["label_number"]):
-            _btn = Button(self.labelControlPanelFrame, text="class{}".format(i), height=1,
+            _btn = Button(label_scroll_frame, text="class{}".format(i), height=2, width=20,
                           command=self.__getattribute__("set_class{}_btn_callback".format(i)))
-            _btn.grid(row=i, column=0, columnspan=2, sticky=W + E)
-        self.current_class_label = Label(self.labelControlPanelFrame, width=11, text='当前标签类:')
-        self.current_class_label.grid(row=1 + self.cfg["label_number"], column=0)
+            _btn.bind("<MouseWheel>",
+                      lambda event: label_control_canvas.yview('scroll', '-1', "units")
+                      if event.delta > 0 else label_control_canvas.yview('scroll', '1', "units"))
+            label_control_canvas.create_window(0, i * 47, anchor=NW, window=_btn)
+
+        label_control_canvas.config(scrollregion=label_control_canvas.bbox(ALL),
+                                    yscrollcommand=label_ctrl_scrollbar.set)
+        label_ctrl_scrollbar.config(command=label_control_canvas.yview)
+        # 3.2 显示当前标签类的label
+        label_display_frame = Frame(label_control_frame)
+        label_display_frame.grid(row=1, column=0)
+        current_class_label = Label(label_display_frame, text='当前标签类:')
+        current_class_label.grid(row=0, column=0)
         self.current_class_number = IntVar(value=0)
-        Label(self.labelControlPanelFrame, textvariable=self.current_class_number,
-              width=2, padx=5).grid(row=1 + self.cfg["label_number"], column=1, sticky=W + E + N)
+        Label(label_display_frame, textvariable=self.current_class_number).grid(row=0, column=1)
 
         # 4.图片导航面板
         navi_frame = LabelFrame(self.root, text='导航')
