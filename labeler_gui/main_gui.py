@@ -427,13 +427,13 @@ class Labeler(object):
 
         # 1.3 PET图像面板
         pet_image_frame = LabelFrame(self.root, text="PET (原始)")
-        pet_image_frame.grid(row=1, column=0, rowspan=2, sticky=NW, padx=5)
+        pet_image_frame.grid(row=1, column=0, rowspan=3, sticky=NW, padx=5)
         self.pet_canvas = Canvas(pet_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.pet_canvas.pack()
 
         # 1.4 用来显示算法结果的副面板
         self.optimized_label_frame = LabelFrame(self.root, text="优化标签")
-        self.optimized_label_frame.grid(row=1, column=1, rowspan=2, sticky=NW, padx=5)
+        self.optimized_label_frame.grid(row=1, column=1, rowspan=3, sticky=NW, padx=5)
         self.opt_panel = Canvas(self.optimized_label_frame, height=self._PSIZE, width=self._PSIZE)
         self.opt_panel.pack()
         self.opt_btn = Button(self.optimized_label_frame, text='generate active contour',
@@ -529,7 +529,7 @@ class Labeler(object):
 
         # 6. logo
         logo_label = Label(self.root, text="Huiyan Jiang Lab. in Northeastern University", background="yellow")
-        # logo_label.grid(row=2, column=2, sticky=SE, columnspan=2, padx=5, pady=5)
+        logo_label.grid(row=3, column=2, sticky=SE, columnspan=2, padx=5, pady=5)
 
         # 启动GUI
         self.root.mainloop()
