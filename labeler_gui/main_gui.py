@@ -486,7 +486,25 @@ class Labeler(object):
         self.current_class_number = IntVar(value=0)
         Label(label_display_frame, textvariable=self.current_class_number).grid(row=0, column=1)
 
-        # 4.图片导航面板
+        # 4.文件加载面板
+        load_dir_frame = LabelFrame(self.root, text='加载文件')
+        load_dir_frame.grid(row=1, column=2, columnspan=2, sticky=NW, ipadx=5, ipady=0)
+        load_ct_dir_btn = Button(load_dir_frame, command=self.load_ct_dir_btn_callback, width=17, text='CT文件夹路径')
+        load_ct_dir_btn.grid(row=0, column=0, padx=5)
+        self.load_ct_dir_entry = Entry(load_dir_frame, width=54, font=Font(size=20))
+        self.load_ct_dir_entry.grid(row=0, column=1, pady=7)
+        load_pet_dir_btn = Button(load_dir_frame, command=self.load_pet_dir_btn_callback, width=17, text="PET文件夹路径")
+        load_pet_dir_btn.grid(row=1, column=0, padx=5)
+        self.load_pet_dir_entry = Entry(load_dir_frame, width=54, font=Font(size=20))
+        self.load_pet_dir_entry.grid(row=1, column=1, pady=7)
+        load_dir_btn = Button(load_dir_frame, command=self.load_btn_callback, width=17, text="加载")
+        load_dir_btn.grid(row=2, column=0, padx=5, pady=5)
+        # load_dir_label = Label(load_dir_frame, text="使用方法: 请先选择文件夹路径，然后单击“加载”按钮。"
+        #                                             "本系统亦支持直接键入文件夹路径", font=Font(size=15))
+        load_dir_label = Label(load_dir_frame, text="使用方法", font=Font(size=15))  # TODO: 补上使用方法
+        load_dir_label.grid(row=2, column=1, sticky=W, )
+
+        # 5.图片导航面板
         navi_frame = LabelFrame(self.root, text='导航')
         navi_frame.grid(row=2, column=2, sticky=NW, columnspan=2, padx=5, pady=5, ipady=5)
         prev_img_btn = Button(navi_frame, width=10, height=2, command=self.prev_image_btn_callback, text='向前( ← )')
@@ -511,27 +529,9 @@ class Labeler(object):
         # goto_img_btn = Button(navi_frame, text='Go', command=self.goto_image_btn_callback)
         # goto_img_btn.pack(side=LEFT)
 
-        # 5.文件加载面板
-        load_dir_frame = LabelFrame(self.root, text='加载文件')
-        load_dir_frame.grid(row=1, column=2, columnspan=2, sticky=NW, ipadx=5, ipady=0)
-        load_ct_dir_btn = Button(load_dir_frame, command=self.load_ct_dir_btn_callback, width=17, text='CT文件夹路径')
-        load_ct_dir_btn.grid(row=0, column=0, padx=5)
-        self.load_ct_dir_entry = Entry(load_dir_frame, width=54, font=Font(size=20))
-        self.load_ct_dir_entry.grid(row=0, column=1, pady=7)
-        load_pet_dir_btn = Button(load_dir_frame, command=self.load_pet_dir_btn_callback, width=17, text="PET文件夹路径")
-        load_pet_dir_btn.grid(row=1, column=0, padx=5)
-        self.load_pet_dir_entry = Entry(load_dir_frame, width=54, font=Font(size=20))
-        self.load_pet_dir_entry.grid(row=1, column=1, pady=7)
-        load_dir_btn = Button(load_dir_frame, command=self.load_btn_callback, width=17, text="加载")
-        load_dir_btn.grid(row=2, column=0, padx=5, pady=5)
-        # load_dir_label = Label(load_dir_frame, text="使用方法: 请先选择文件夹路径，然后单击“加载”按钮。"
-        #                                             "本系统亦支持直接键入文件夹路径", font=Font(size=15))
-        load_dir_label = Label(load_dir_frame, text="使用方法", font=Font(size=15))  # TODO: 补上使用方法
-        load_dir_label.grid(row=2, column=1, sticky=W, )
-
         # 6. logo
-        logo_label = Label(self.root, text="Huiyan Jiang Lab. in Northeastern University", background="yellow")
-        logo_label.grid(row=3, column=2, sticky=SE, columnspan=2, padx=5, pady=5)
+        logo_label = Label(self.root, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
+        logo_label.grid(row=3, column=2, sticky=SW, columnspan=2, padx=5, pady=5)
 
         # 启动GUI
         self.root.mainloop()
