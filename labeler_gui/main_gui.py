@@ -76,21 +76,21 @@ class Labeler(object):
         self.mouse_position_label.config(text=('x: {}, y: {}'.format(event.x, event.y)))
         # CT图像指示线
         self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
-        self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
+        self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='yellow')
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
-        self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
+        self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
             self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
-            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
+            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
             self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
-            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
+            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
             # PET图像指示线
             self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
-            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='white')
+            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
             self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
-            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='white')
+            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
 
         # 画标签框
         if self.mouse_clicked:
