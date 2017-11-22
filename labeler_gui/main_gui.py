@@ -324,6 +324,7 @@ class Labeler(object):
         self.ct_canvas.config(width=max(self.ct_tk_img.width(), self._PSIZE),
                               height=max(self.ct_tk_img.height(), self._PSIZE))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
+        self.ct_image_frame.config(text="CT (No. {}/{})".format(self.image_cursor, len(self.ct_image_list)))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # 加载SUV图像
@@ -337,6 +338,7 @@ class Labeler(object):
             self.pet_tk_img = ImageTk.PhotoImage(
                 Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
+            self.pet_image_frame.config(text="PET (No. {}/{})".format(self.image_cursor, len(self.pet_image_list)))
 
         # 配置进度条
         self.img_progress_label.config(text="[ {:>04} / {:>04} ]".format(self.image_cursor, len(self.ct_image_list)))
@@ -412,24 +414,24 @@ class Labeler(object):
         self.root.bind("<Control-KeyPress-s>", self.save_label_btn_callback)
 
         # 1.1 CT图像面板
-        ct_image_frame = LabelFrame(self.root, text="CT")
-        ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
-        self.ct_canvas = Canvas(ct_image_frame, height=self._PSIZE, width=self._PSIZE)
+        self.ct_image_frame = LabelFrame(self.root, text="CT")
+        self.ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
+        self.ct_canvas = Canvas(self.ct_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.ct_canvas.bind("<Button-1>", self.mouse_click_callback)
         self.ct_canvas.bind("<Motion>", self.mouse_move_callback)
         self.ct_canvas.grid(row=0, column=0)
 
         # 1.2 PET图像面板
+        self.pet_image_frame = LabelFrame(self.root, text="PET")
+        self.pet_image_frame.grid(row=0, column=1, sticky=NW, padx=5)
+        self.pet_canvas = Canvas(self.pet_image_frame, height=self._PSIZE, width=self._PSIZE)
+        self.pet_canvas.pack()
+
+        # 1.3 SUV图像面板
         suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)")
-        suv_image_frame.grid(row=1, column=0, sticky=NW, padx=5)
+        suv_image_frame.grid(row=1, column=0, rowspan=3, sticky=NW, padx=5)
         self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
-
-        # 1.3 PET图像面板
-        pet_image_frame = LabelFrame(self.root, text="PET (原始)")
-        pet_image_frame.grid(row=0, column=1, rowspan=3, sticky=NW, padx=5)
-        self.pet_canvas = Canvas(pet_image_frame, height=self._PSIZE, width=self._PSIZE)
-        self.pet_canvas.pack()
 
         # 1.4 用来显示算法结果的副面板
         self.optimized_label_frame = LabelFrame(self.root, text="优化标签")
@@ -511,7 +513,7 @@ class Labeler(object):
 
         # 5.文件加载面板
         load_dir_frame = LabelFrame(self.root, text='加载文件')
-        load_dir_frame.grid(row=1, column=2, columnspan=2, sticky=NW, padx=5, ipadx=5, ipady=0, pady=5)
+        load_dir_frame.grid(row=1, column=2, columnspan=2, sticky=NW, ipadx=5, ipady=0)
         load_ct_dir_btn = Button(load_dir_frame, command=self.load_ct_dir_btn_callback, width=17, text='CT文件夹路径')
         load_ct_dir_btn.grid(row=0, column=0, padx=5)
         self.load_ct_dir_entry = Entry(load_dir_frame, width=54, font=Font(size=20))
