@@ -324,7 +324,7 @@ class Labeler(object):
         self.ct_canvas.config(width=max(self.ct_tk_img.width(), self._PSIZE),
                               height=max(self.ct_tk_img.height(), self._PSIZE))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
-        self.ct_image_frame.config(text="CT (No. {}/{})".format(self.image_cursor, len(self.ct_image_list)))
+        self.ct_image_frame.config(text="CT ({}/{})".format(self.image_cursor, len(self.ct_image_list)))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # 加载SUV图像
@@ -338,7 +338,7 @@ class Labeler(object):
             self.pet_tk_img = ImageTk.PhotoImage(
                 Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
-            self.pet_image_frame.config(text="PET (No. {}/{})".format(self.image_cursor, len(self.pet_image_list)))
+            self.pet_image_frame.config(text="PET ({}/{})".format(self.image_cursor, len(self.pet_image_list)))
 
         # 配置进度条
         self.img_progress_label.config(text="[ {:>04} / {:>04} ]".format(self.image_cursor, len(self.ct_image_list)))
