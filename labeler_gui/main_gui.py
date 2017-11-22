@@ -421,13 +421,13 @@ class Labeler(object):
 
         # 1.2 PET图像面板
         suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)")
-        suv_image_frame.grid(row=0, column=1, sticky=NW, padx=5)
+        suv_image_frame.grid(row=1, column=0, sticky=NW, padx=5)
         self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
 
         # 1.3 PET图像面板
         pet_image_frame = LabelFrame(self.root, text="PET (原始)")
-        pet_image_frame.grid(row=1, column=0, rowspan=3, sticky=NW, padx=5)
+        pet_image_frame.grid(row=0, column=1, rowspan=3, sticky=NW, padx=5)
         self.pet_canvas = Canvas(pet_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.pet_canvas.pack()
 
