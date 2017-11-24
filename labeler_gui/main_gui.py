@@ -367,7 +367,7 @@ class Labeler(object):
                                                                width=2, outline=self._color)
                     self.label_box_id_list.append(_temp_id)
                     # 在标签增删面板上增加一个标签
-                    self.bbox_listbox.insert(END, '({}, {}) -> ({}, {}) [Class {}]'
+                    self.bbox_listbox.insert(END, '({:3}, {:3})->({:3}, {:3}) [Class {}]'
                                              .format(_label.x1, _label.y1, _label.x2, _label.y2, _label.class_id))
                     self.bbox_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
@@ -388,8 +388,8 @@ class Labeler(object):
             # 更新GUI界面中标签面板
             self.label_box_id_list.append(self.curr_label_box_id)
             self.bbox_listbox.insert(END,
-                                     '(%d, %d) -> (%d, %d) [Class %d]' % (
-                                         x1, y1, x2, y2, self.current_class_number.get()))
+                                     '({:3}, {:3})->({:3}, {:3}) [Class {}]'.format(x1, y1, x2, y2,
+                                                                                    self.current_class_number.get()))
             self.bbox_listbox.itemconfig(len(self.label_box_id_list) - 1, fg=self._color)
             self._color = self.color_generator.send("r")
             # 将当前的GUI矩形的id设为None，这样在鼠标移动的时候，就不会被处理鼠标移动的回调函数删除
@@ -446,7 +446,7 @@ class Labeler(object):
         # 2. 显示标签的面板
         self.bbox_frame = LabelFrame(self.root, text='标签列表', font=self._BIG_FONT)
         self.bbox_frame.grid(row=0, column=2, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=30, height=20, background='white')
+        self.bbox_listbox = Listbox(self.bbox_frame, width=35, height=15, background='white', font=self._BIG_FONT)
         self.bbox_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
