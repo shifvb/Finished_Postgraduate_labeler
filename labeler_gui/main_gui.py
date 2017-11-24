@@ -1,4 +1,5 @@
 import os
+import pickle
 from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import showerror, showinfo
@@ -25,11 +26,13 @@ class Labeler(object):
         self.ct_image_list = list()  # 用户选择的文件夹中能够加载图片的文件名（绝对路径）
         self.suv_image_list = list()
         self.pet_image_list = list()
+        self.ori_suv_value_list = list()
         self.image_cursor = -1  # 当前UI中显示的图片为第几张，取值时self.ct_image_list[self.image_cursor-1]
         self.label_file_path = None  # 用来保存当前图片对应label的绝对路径
         # GUI相关变量
         self.root = Tk()  # 初始化主窗口
         self.ct_tk_img = None  # 创建标签面板的图像
+        self.ori_suv_array = None  # 用来存储当前图像原始SUV值的变量
         self._color = None  # 用来储存某些组件当前所用颜色的变量
         self.label_list = []  # 用来存储当前标签的list
         self.label_box_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
@@ -92,6 +95,12 @@ class Labeler(object):
             self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
             self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
             self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+            # 当前原始SUV值
+            _x = min(int(event.x / self._PSIZE * self.ori_suv_array.shape[0]), self.ori_suv_array.shape[0] - 1)
+            _y = min(int(event.y / self._PSIZE * self.ori_suv_array.shape[1]), self.ori_suv_array.shape[1] - 1)
+            ori_suv_value = max(1e-3, self.ori_suv_array[_x][_y])
+            self.pet_image_frame.config(text="PET ({}/{}) 当前值: {:.3}".format(
+                self.image_cursor, len(self.ct_image_list), ori_suv_value))
 
         # 画标签框
         if self.mouse_clicked:
@@ -225,11 +234,12 @@ class Labeler(object):
                                      self.ct_workspace,
                                      self.cfg['ct_output_folder_name'],
                                      self.pet_workspace,
-                                     self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'])
-        # todo delete it
-        self.ct_image_list = self.image_loader._ct_img_list
-        self.suv_image_list = self.image_loader._suv_img_list
-        self.pet_image_list = self.image_loader._pet_img_list
+                                     self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'],
+                                     self.cfg['ori_suv_output_folder_name'])
+        self.ct_image_list = self.image_loader.cts
+        self.suv_image_list = self.image_loader.suvs
+        self.pet_image_list = self.image_loader.pets
+        self.ori_suv_value_list = self.image_loader.ori_suvs
 
         # default to the 1st image in the collection
         self.image_cursor = 1
@@ -334,6 +344,9 @@ class Labeler(object):
                 Image.open(suv_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
             self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
+            # 加载原始SUV值
+            ori_suv_value_path = self.ori_suv_value_list[self.image_cursor - 1]
+            self.ori_suv_array = pickle.load(open(ori_suv_value_path, 'rb'))
             # 加载PET图像
             pet_image_path = self.pet_image_list[self.image_cursor - 1]
             self.pet_tk_img = ImageTk.PhotoImage(
