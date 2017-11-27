@@ -78,7 +78,8 @@ class Labeler(object):
         if not self.load_mode:
             return
         # 标注现在鼠标坐标
-        self.mouse_position_label.config(text=('x: {}, y: {}'.format(event.x, event.y)))
+        self.ct_image_frame.config(
+            text="CT ({}/{}) x: {}, y: {}".format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
         # CT图像指示线
         self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
         self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='yellow')
@@ -99,7 +100,8 @@ class Labeler(object):
             # 当前原始SUV值
             _x = min(int(event.x / self._PSIZE * self.ori_suv_array.shape[0]), self.ori_suv_array.shape[0] - 1)
             _y = min(int(event.y / self._PSIZE * self.ori_suv_array.shape[1]), self.ori_suv_array.shape[1] - 1)
-            ori_suv_value = max(1e-3, self.ori_suv_array[_x][_y])
+
+            ori_suv_value = self.ori_suv_array[_x][_y] if self.ori_suv_array[_x][_y] > 1e-2 else 0.0
             self.pet_image_frame.config(text="PET ({}/{}) 当前SUV值: {:.3}".format(
                 self.image_cursor, len(self.ct_image_list), ori_suv_value))
 
@@ -297,26 +299,6 @@ class Labeler(object):
             return
         self._save_label()
 
-    def goto_image_btn_callback(self):
-        """navigation面板 跳转图片按钮 callback"""
-        if not self.load_mode:  # 没加载文件夹之前此按钮无反应
-            return
-        _index_str = self.goto_img_entry.get()  # 从GUI得到想要goto的页数
-        if _index_str == '':  # 如果没有填就无反应
-            return
-        try:
-            _index = int(_index_str)
-        except ValueError:  # 如果不是数字就报错
-            showinfo(title="信息", message="请填入数字")
-            return
-        if 1 <= _index <= len(self.ct_image_list):
-            self.image_cursor = _index
-            self._load_image()
-            self._load_labels()
-        else:
-            showinfo(title="信息", message="请填入有效数字！")
-            return
-
     # -------- navigation 面板 callback end ----------
 
     # -------- 功能性函数 start -----------
@@ -355,9 +337,6 @@ class Labeler(object):
                 Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
             self.pet_image_frame.config(text="PET ({}/{})".format(self.image_cursor, len(self.pet_image_list)))
-
-        # 配置进度条
-        self.img_progress_label.config(text="[ {:>04} / {:>04} ]".format(self.image_cursor, len(self.ct_image_list)))
 
     def _load_labels(self):
         # 清除已有标签
@@ -460,14 +439,18 @@ class Labeler(object):
         self.optimized_label_frame.grid(row=1, column=1, rowspan=3, sticky=NW, padx=5)
         self.opt_panel = Canvas(self.optimized_label_frame, height=self._PSIZE, width=self._PSIZE)
         self.opt_panel.pack()
-        self.opt_btn = Button(self.optimized_label_frame, text='generate active contour',
-                              command=self.generate_active_contour_callback)
+        # self.opt_btn = Button(self.optimized_label_frame, text='generate active contour',
+        #                       command=self.generate_active_contour_callback)
         # self.opt_btn.pack()
 
-        # 2. 显示标签的面板
-        self.bbox_frame = LabelFrame(self.root, text='标签列表', font=self._BIG_FONT)
-        self.bbox_frame.grid(row=0, column=2, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=15, font=self._MID_FONT)
+        # 2. 右上角面板
+        upper_right_frame = Frame(self.root)
+        upper_right_frame.grid(row=0, column=2, sticky=NW)
+
+        # 2.1 显示标签面板
+        self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._BIG_FONT)
+        self.bbox_frame.grid(row=0, column=0, sticky=NW)
+        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT)
         self.bbox_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
@@ -475,21 +458,18 @@ class Labeler(object):
         self.bbox_listbox['yscrollcommand'] = bbox_listbox_scroll_bar.set
         del_bbox_btn = Button(self.bbox_frame, command=self.del_bbox_btn_callback, text='删除选定标签')
         del_bbox_btn.config(font=self._BIG_FONT)
-        del_bbox_btn.grid(row=1, column=0, columnspan=2, sticky=NSEW, pady=1)
+        del_bbox_btn.grid(row=1, column=0, sticky=NSEW, pady=1)
         clear_bbox_btn = Button(self.bbox_frame, command=self.clear_bbox_callback, text='清除所有标签')
         clear_bbox_btn.config(font=self._BIG_FONT)
-        clear_bbox_btn.grid(row=2, column=0, columnspan=2, sticky=NSEW)
+        clear_bbox_btn.grid(row=2, column=0, sticky=NSEW)
 
-        # 3.控制/显示当前标签类型的面板
+        # 2.2 选择标签类的按钮
         init_class_select_panel(self)
-        label_control_frame = LabelFrame(self.root, text='标签类选择', font=self._BIG_FONT)
-        label_control_frame.grid(row=0, column=3, sticky=NW)
-        # 3.1 显示选择标签的按钮
-        label_scroll_frame = Frame(label_control_frame)
-        label_scroll_frame.grid(row=0, column=0)
+        label_scroll_frame = Frame(self.bbox_frame)
+        label_scroll_frame.grid(row=0, column=1, rowspan=2)
         label_ctrl_scrollbar = Scrollbar(label_scroll_frame)
         label_ctrl_scrollbar.grid(row=0, column=1, sticky=NS)
-        label_control_canvas = MyCanvas(label_scroll_frame, width=190, height=400)
+        label_control_canvas = MyCanvas(label_scroll_frame, width=190, height=350)
         label_control_canvas.grid(row=0, column=0, sticky=NSEW)
         for i in range(self.cfg["label_number"]):
             _btn = Button(label_scroll_frame, text="class{}".format(i), height=2, width=18, font=self._BIG_FONT,
@@ -502,13 +482,27 @@ class Labeler(object):
         label_control_canvas.config(scrollregion=label_control_canvas.bbox(ALL),
                                     yscrollcommand=label_ctrl_scrollbar.set)
         label_ctrl_scrollbar.config(command=label_control_canvas.yview)
-        # 3.2 显示当前标签类的label
-        label_display_frame = Frame(label_control_frame)
-        label_display_frame.grid(row=1, column=0)
+        # 2.3 显示当前标签类
+        label_display_frame = Frame(self.bbox_frame)
+        label_display_frame.grid(row=2, column=1, sticky=S)
         current_class_label = Label(label_display_frame, text='当前标签类:', font=self._BIG_FONT)
         current_class_label.grid(row=0, column=0)
         self.current_class_number = IntVar(value=0)
         Label(label_display_frame, textvariable=self.current_class_number, font=self._BIG_FONT).grid(row=0, column=1)
+
+        # 2.4 图片导航面板
+        navi_frame = LabelFrame(upper_right_frame, text='导航', font=self._BIG_FONT)
+        navi_frame.grid(row=1, column=0, sticky=NW)
+        prev_img_btn = Button(navi_frame, width=12, height=2, command=self.prev_image_btn_callback, text='向前(←)')
+        prev_img_btn.config(font=self._BIG_FONT)
+        prev_img_btn.pack(side=LEFT, padx=8, pady=3)
+        save_label_btn = Button(navi_frame, width=20, height=2, command=self.save_label_btn_callback,
+                                text='保存标签(Ctrl+S)')
+        save_label_btn.config(font=self._BIG_FONT)
+        save_label_btn.pack(side=LEFT, padx=7, pady=3)
+        next_img_btn = Button(navi_frame, width=12, height=2, command=self.next_image_btn_callback, text='向后(→)')
+        next_img_btn.config(font=self._BIG_FONT)
+        next_img_btn.pack(side=LEFT, padx=6, pady=6)
 
         # 4.文件加载面板
         load_dir_frame = LabelFrame(self.root, text='加载文件', font=self._BIG_FONT)
@@ -526,29 +520,16 @@ class Labeler(object):
         load_dir_btn = Button(load_dir_frame, command=self.load_btn_callback, width=17, text="加载")
         load_dir_btn.config(font=self._BIG_FONT)
         load_dir_btn.grid(row=2, column=0, padx=5, pady=3)
-        # load_dir_label = Label(load_dir_frame, text="使用方法: 请先选择文件夹路径，然后单击“加载”按钮。"
-        #                                             "本系统亦支持直接键入文件夹路径", font=Font(size=15))
-        load_dir_label = Label(load_dir_frame, font=Font(size=15))  # TODO: 补上使用方法
+        load_dir_label = Label(load_dir_frame, font=Font(size=15))
         load_dir_label.grid(row=2, column=1, sticky=W, )
 
-        # 5.图片导航面板
-        navi_frame = LabelFrame(self.root, text='导航', font=self._BIG_FONT)
-        navi_frame.grid(row=2, column=2, sticky=NW, columnspan=2, padx=5, pady=5, ipady=5)
-        prev_img_btn = Button(navi_frame, width=10, height=2, command=self.prev_image_btn_callback, text='向前( ← )')
-        prev_img_btn.config(font=self._BIG_FONT)
-        prev_img_btn.pack(side=LEFT, padx=7, pady=3)
-        save_label_btn = Button(navi_frame, width=10, height=2, command=self.save_label_btn_callback, text='保存标签')
-        save_label_btn.config(font=self._BIG_FONT)
-        save_label_btn.pack(side=LEFT, padx=7, pady=3)
-        next_img_btn = Button(navi_frame, width=10, height=2, command=self.next_image_btn_callback, text='向后( → )')
-        next_img_btn.config(font=self._BIG_FONT)
-        next_img_btn.pack(side=LEFT, padx=6, pady=3)
-        img_progress_name_label = Label(navi_frame, width=7, text="进度:", font=self._BIG_FONT)
-        img_progress_name_label.pack(side=LEFT)
-        self.img_progress_label = Label(navi_frame, width=13, text="{:>04} / {:>04}".format(0, 0), font=self._BIG_FONT)
-        self.img_progress_label.pack(side=LEFT)
-        self.mouse_position_label = Label(navi_frame, width=15, text='x: N/A, y: N/A', font=self._BIG_FONT)
-        self.mouse_position_label.pack(side=LEFT)
+        # todo: delete these
+        # img_progress_name_label = Label(navi_frame, width=7, text="进度:", font=self._BIG_FONT)
+        # img_progress_name_label.pack(side=LEFT)
+        # self.img_progress_label = Label(navi_frame, width=13, text="{:>04} / {:>04}".format(0, 0), font=self._BIG_FONT)
+        # self.img_progress_label.pack(side=LEFT)
+        # self.mouse_position_label = Label(navi_frame, width=15, text='x: N/A, y: N/A', font=self._BIG_FONT)
+        # self.mouse_position_label.pack(side=LEFT)
         # go_to_image_label = Label(navi_frame, width=10, text="跳转到图像：")
         # go_to_image_label.pack(side=LEFT)
         # self.goto_img_entry = Entry(navi_frame, width=5, font=Font(size=30))

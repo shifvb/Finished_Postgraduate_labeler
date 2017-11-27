@@ -98,7 +98,7 @@ class ImageLoader(object):
                 pickle.dump(_arr, f)
                 ori_succeed_list.append(abs_ori_output_fliename)
             # 计算并存储阈值化图像
-            _mask = np.array(_arr > 2, dtype=np.uint8)
+            _mask = np.array(_arr > 2.0, dtype=np.uint8)
             _arr *= _mask  # SUV < 2.0 的全部置为0
             if not _arr.min() == _arr.max():  # 归一化
                 _arr = (_arr - _arr.min()) / (_arr.max() - _arr.min()) * 255  # 最大值等于最小值，正常归一化
