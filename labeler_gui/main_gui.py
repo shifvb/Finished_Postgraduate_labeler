@@ -467,7 +467,7 @@ class Labeler(object):
         # 2. 显示标签的面板
         self.bbox_frame = LabelFrame(self.root, text='标签列表', font=self._BIG_FONT)
         self.bbox_frame.grid(row=0, column=2, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=34, height=15, font=self._MID_FONT)
+        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=15, font=self._MID_FONT)
         self.bbox_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
