@@ -21,12 +21,12 @@ class Labeler(object):
         self.image_loader = ImageLoader()  # 初始化ImageLoader
         # 文件相关变量
         self.load_mode = str()  # 目前有 CT, PET_CT 两种
-        self.ct_workspace = str()  # 用户选定的dicom图像文件夹就是workspace
+        self.ct_workspace = str()  # CT workspace
         self.pet_workspace = str()  # PET workspace
-        self.ct_image_list = list()  # 用户选择的文件夹中能够加载图片的文件名（绝对路径）
-        self.suv_image_list = list()
-        self.pet_image_list = list()
-        self.ori_suv_value_list = list()
+        self.ct_image_list = list()  # 加载CT图像的文件名列表（绝对路径）
+        self.suv_image_list = list()  # 加载SUV图像的文件名列表（绝对路径）
+        self.pet_image_list = list()  # 加载PET图像的文件名列表（绝对路径）
+        self.ori_suv_value_list = list()  # 加载原始SUV图像的文件名列表（绝对路径）
         self.image_cursor = -1  # 当前UI中显示的图片为第几张，取值时self.ct_image_list[self.image_cursor-1]
         self.label_file_path = None  # 用来保存当前图片对应label的绝对路径
         # GUI相关变量
@@ -39,7 +39,8 @@ class Labeler(object):
         self.curr_label_box_id = -1  # 用来储存当前创建的标签框id的变量
         # GUI相关常量
         self._PSIZE = 480  # PSIZE: panel size, 显示图像大小
-        self._BIG_FONT = ("", 15)  # big font size
+        self._BIG_FONT = Font(size=15)  # big font size
+        self._MID_FONT = Font(size=13)
         # GUI_鼠标
         self.mouse_clicked = False  # 追踪鼠标是否点击，点击奇数次为True，偶数次为False
         self.current_mouse_x = 0  # 当前鼠标x
@@ -252,6 +253,7 @@ class Labeler(object):
         # GUI加载
         self._load_image()
         self._load_labels()
+        self._load_patient_info()
 
     # -------- load 面板 callback end ----------
 
@@ -384,6 +386,12 @@ class Labeler(object):
                                              .format(_label.x1, _label.y1, _label.x2, _label.y2, _label.class_id))
                     self.bbox_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
+    def _load_patient_info(self):
+        # todo
+        print("todo: load patient info")
+        print(self.ct_workspace, self.pet_workspace, self.cfg)
+        pass
+
     def _create_label_box(self, xCoord, yCoord):
         # 记录当前状态
         self.mouse_clicked = not self.mouse_clicked
@@ -459,7 +467,7 @@ class Labeler(object):
         # 2. 显示标签的面板
         self.bbox_frame = LabelFrame(self.root, text='标签列表', font=self._BIG_FONT)
         self.bbox_frame.grid(row=0, column=2, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=35, height=15, background='white', font=self._BIG_FONT)
+        self.bbox_listbox = Listbox(self.bbox_frame, width=34, height=15, font=self._MID_FONT)
         self.bbox_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
