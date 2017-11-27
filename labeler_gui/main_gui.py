@@ -11,6 +11,7 @@ from labeler_gui.MyCanvas import MyCanvas
 from labeler_util.ImageLoader import ImageLoader
 from labeler_util.gen_colors import gen_colors
 from labeler_util.label_box import LabelBox
+from labeler_util.load_patient_info import load_patient_info
 
 
 class Labeler(object):
@@ -366,10 +367,9 @@ class Labeler(object):
                     self.bbox_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
     def _load_patient_info(self):
-        # todo
-        print("todo: load patient info")
-        print(self.ct_workspace, self.pet_workspace, self.cfg)
-        pass
+        self.patient_info = load_patient_info(self.ct_workspace, self.pet_workspace)
+        print(self.patient_info)
+
 
     def _create_label_box(self, xCoord, yCoord):
         # 记录当前状态
