@@ -368,7 +368,15 @@ class Labeler(object):
 
     def _load_patient_info(self):
         self.patient_info = load_patient_info(self.ct_workspace, self.pet_workspace)
-        print(self.patient_info)
+        self.patient_id_value.config(text=self.patient_info["patient_id"])
+        self.patient_name_value.config(text=self.patient_info["patient_name"])
+        self.patient_birthday_value.config(text=self.patient_info["patient_birthday"])
+        self.patient_sex_value.config(text=self.patient_info["patient_sex"])
+        self.patient_age_value.config(text=self.patient_info["patient_age"])
+        self.patient_weight_value.config(text=self.patient_info["patient_weight"])
+        self.patient_height_value.config(text=self.patient_info["patient_height"])
+        self.patient_tracer_value.config(text=self.patient_info["pet_tracer_name"])
+        # print(self.patient_info)
 
     def _create_label_box(self, xCoord, yCoord):
         # 记录当前状态
@@ -506,11 +514,11 @@ class Labeler(object):
         # 3. 病人信息面板
         patient_info_frame = LabelFrame(upper_right_frame, text="基本信息", font=self._BIG_FONT)
         patient_info_frame.grid(row=0, column=1, rowspan=2, sticky=NW, padx=5)
-        patient_info_k_frame = Frame(patient_info_frame, bg="blue")  # k for "key", means the name of the value
-        patient_info_k_frame.grid(row=0, column=0)
-        patient_info_v_frame = Frame(patient_info_frame, bg="red")
+        patient_info_k_frame = Frame(patient_info_frame)  # k for "key", means the name of the value
+        patient_info_k_frame.grid(row=0, column=0, sticky=W)
+        patient_info_v_frame = Frame(patient_info_frame)
         patient_info_v_frame.grid(row=0, column=1)
-        _p_pady = 8
+        _p_pady = 16
         # 3.1 病人信息的名称
         patient_id_label = Label(patient_info_k_frame, text="ID:", font=self._BIG_FONT)
         patient_id_label.grid(row=0, column=0, sticky=W, pady=_p_pady)
@@ -527,9 +535,10 @@ class Labeler(object):
         patient_age_label = Label(patient_info_k_frame, text="年龄:", font=self._BIG_FONT)
         patient_age_label.grid(row=6, column=0, sticky=W, pady=_p_pady)
         patient_tracer_label = Label(patient_info_k_frame, text="示踪剂:", font=self._BIG_FONT)
-        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=_p_pady)
+        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=11)
+        Label(patient_info_frame, width=36, font=self._BIG_FONT).grid(row=1, column=0, columnspan=2, sticky=W)
         # 3.2 病人信息的值
-        self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT, width=29)
+        self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_id_value.grid(row=0, column=0, sticky=E, pady=_p_pady)
         self.patient_name_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_name_value.grid(row=1, column=0, sticky=E, pady=_p_pady)
@@ -544,7 +553,7 @@ class Labeler(object):
         self.patient_age_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_age_value.grid(row=6, column=0, sticky=E, pady=_p_pady)
         self.patient_tracer_value = Label(patient_info_v_frame, font=self._BIG_FONT)
-        self.patient_tracer_value.grid(row=7, column=0, sticky=E, pady=_p_pady)
+        self.patient_tracer_value.grid(row=7, column=0, sticky=E, pady=11)
 
         # 4.文件加载面板
         load_dir_frame = LabelFrame(self.root, text='加载文件', font=self._BIG_FONT)
