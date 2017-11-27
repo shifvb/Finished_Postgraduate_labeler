@@ -99,7 +99,7 @@ class Labeler(object):
             _x = min(int(event.x / self._PSIZE * self.ori_suv_array.shape[0]), self.ori_suv_array.shape[0] - 1)
             _y = min(int(event.y / self._PSIZE * self.ori_suv_array.shape[1]), self.ori_suv_array.shape[1] - 1)
             ori_suv_value = max(1e-3, self.ori_suv_array[_x][_y])
-            self.pet_image_frame.config(text="PET ({}/{}) 当前值: {:.3}".format(
+            self.pet_image_frame.config(text="PET ({}/{}) 当前SUV值: {:.3}".format(
                 self.image_cursor, len(self.ct_image_list), ori_suv_value))
 
         # 画标签框
