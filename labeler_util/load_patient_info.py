@@ -55,4 +55,6 @@ def load_patient_info(ct_workspace: str, pet_workspace: str) -> dict:
 
 
 if __name__ == '__main__':
-    load_patient_info(r"C:/Users/anonymous/Desktop/PT00998-2/4", r"C:/Users/anonymous/Desktop/PT00998-2/5")
+    r = load_patient_info(r"C:/Users/anonymous/Desktop/PT00998-2/4", r"C:/Users/anonymous/Desktop/PT00998-2/5")
+    from pprint import pprint
+    pprint(r)
