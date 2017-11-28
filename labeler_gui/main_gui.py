@@ -437,13 +437,13 @@ class Labeler(object):
 
         # 1.3 SUV图像面板
         suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)")
-        suv_image_frame.grid(row=1, column=0, rowspan=3, sticky=NW, padx=5)
+        suv_image_frame.grid(row=1, column=0, sticky=NW, padx=5)
         self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
 
         # 1.4 用来显示算法结果的副面板
         self.optimized_label_frame = LabelFrame(self.root, text="优化标签")
-        self.optimized_label_frame.grid(row=1, column=1, rowspan=3, sticky=NW, padx=5)
+        self.optimized_label_frame.grid(row=1, column=1, sticky=NW, padx=5)
         self.opt_panel = Canvas(self.optimized_label_frame, height=self._PSIZE, width=self._PSIZE)
         self.opt_panel.pack()
         # self.opt_btn = Button(self.optimized_label_frame, text='generate active contour',
@@ -455,9 +455,9 @@ class Labeler(object):
         upper_right_frame.grid(row=0, column=2, sticky=NW)
 
         # 2.1 显示标签面板
-        self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._BIG_FONT)
+        self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._MID_FONT)
         self.bbox_frame.grid(row=0, column=0, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT)
+        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT, relief=FLAT)
         self.bbox_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
@@ -498,28 +498,27 @@ class Labeler(object):
         Label(label_display_frame, textvariable=self.current_class_number, font=self._BIG_FONT).grid(row=0, column=1)
 
         # 2.4 图片导航面板
-        navi_frame = LabelFrame(upper_right_frame, text='图像导航', font=self._BIG_FONT)
+        navi_frame = LabelFrame(upper_right_frame, text='图像导航', font=self._MID_FONT)
         navi_frame.grid(row=1, column=0, sticky=NW)
         prev_img_btn = Button(navi_frame, width=13, height=2, command=self.prev_image_btn_callback, text='前一张(←)')
         prev_img_btn.config(font=self._BIG_FONT)
-        prev_img_btn.pack(side=LEFT, padx=6, pady=3)
+        prev_img_btn.pack(side=LEFT, padx=6, pady=9)
         save_label_btn = Button(navi_frame, width=20, height=2, command=self.save_label_btn_callback,
                                 text='保存标签(Ctrl+S)')
         save_label_btn.config(font=self._BIG_FONT)
         save_label_btn.pack(side=LEFT, padx=7, pady=3)
         next_img_btn = Button(navi_frame, width=13, height=2, command=self.next_image_btn_callback, text='后一张(→)')
         next_img_btn.config(font=self._BIG_FONT)
-        next_img_btn.pack(side=LEFT, padx=7, pady=6)
+        next_img_btn.pack(side=LEFT, padx=7, pady=9)
 
-        # 3. 病人信息面板
-        patient_info_frame = LabelFrame(upper_right_frame, text="基本信息", font=self._BIG_FONT)
+        # 2.5 病人信息面板
+        patient_info_frame = LabelFrame(upper_right_frame, text="基本信息", font=self._MID_FONT)
         patient_info_frame.grid(row=0, column=1, rowspan=2, sticky=NW, padx=5)
         patient_info_k_frame = Frame(patient_info_frame)  # k for "key", means the name of the value
         patient_info_k_frame.grid(row=0, column=0, sticky=W)
         patient_info_v_frame = Frame(patient_info_frame)
         patient_info_v_frame.grid(row=0, column=1)
         _p_pady = 16
-        # 3.1 病人信息的名称
         patient_id_label = Label(patient_info_k_frame, text="ID:", font=self._BIG_FONT)
         patient_id_label.grid(row=0, column=0, sticky=W, pady=_p_pady)
         patient_name_label = Label(patient_info_k_frame, text="姓名:", font=self._BIG_FONT)
@@ -535,9 +534,8 @@ class Labeler(object):
         patient_age_label = Label(patient_info_k_frame, text="年龄:", font=self._BIG_FONT)
         patient_age_label.grid(row=6, column=0, sticky=W, pady=_p_pady)
         patient_tracer_label = Label(patient_info_k_frame, text="示踪剂:", font=self._BIG_FONT)
-        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=11)
+        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=13)
         Label(patient_info_frame, width=36, font=self._BIG_FONT).grid(row=1, column=0, columnspan=2, sticky=W)
-        # 3.2 病人信息的值
         self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_id_value.grid(row=0, column=0, sticky=E, pady=_p_pady)
         self.patient_name_value = Label(patient_info_v_frame, font=self._BIG_FONT)
@@ -555,9 +553,13 @@ class Labeler(object):
         self.patient_tracer_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_tracer_value.grid(row=7, column=0, sticky=E, pady=11)
 
-        # 4.文件加载面板
-        load_dir_frame = LabelFrame(self.root, text='加载文件', font=self._BIG_FONT)
-        load_dir_frame.grid(row=1, column=2, columnspan=2, sticky=NW, ipadx=5, ipady=0)
+        # 3. 右下角面板
+        bottom_right_frame = Frame(self.root)
+        bottom_right_frame.grid(row=1, column=2, sticky=NW)
+
+        # 3.1 文件加载面板
+        load_dir_frame = LabelFrame(bottom_right_frame, text='加载文件', font=self._MID_FONT)
+        load_dir_frame.grid(row=0, column=0, sticky=NW, ipadx=5, ipady=0)
         load_ct_dir_btn = Button(load_dir_frame, command=self.load_ct_dir_btn_callback, width=17, text='CT文件夹路径')
         load_ct_dir_btn.config(font=self._BIG_FONT)
         load_ct_dir_btn.grid(row=0, column=0, padx=5)
@@ -570,9 +572,17 @@ class Labeler(object):
         self.load_pet_dir_entry.grid(row=1, column=1, pady=7)
         load_dir_btn = Button(load_dir_frame, command=self.load_btn_callback, width=17, text="加载")
         load_dir_btn.config(font=self._BIG_FONT)
-        load_dir_btn.grid(row=2, column=0, padx=5, pady=3)
+        load_dir_btn.grid(row=2, column=0, padx=5, pady=5)
         load_dir_label = Label(load_dir_frame, font=Font(size=15))
         load_dir_label.grid(row=2, column=1, sticky=W, )
+
+        # 3.2 病人诊断面板
+        diagnosis_frame = LabelFrame(bottom_right_frame, text="备注", font=self._MID_FONT)
+        diagnosis_frame.grid(row=1, column=0)
+        diagnosis_text = Text(diagnosis_frame, height=13, width=90,  font=self._BIG_FONT, relief=FLAT)
+        diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
+        diagnosis_save_btn = Button(diagnosis_frame, text="保存备注信息", height=1, font=self._BIG_FONT)
+        diagnosis_save_btn.grid(row=1, column=0, sticky=EW)
 
         # todo: delete these
         # img_progress_name_label = Label(navi_frame, width=7, text="进度:", font=self._BIG_FONT)
@@ -589,8 +599,8 @@ class Labeler(object):
         # goto_img_btn.pack(side=LEFT)
 
         # 6. logo
-        logo_label = Label(self.root, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
-        logo_label.grid(row=3, column=2, sticky=SW, columnspan=2, padx=5, pady=5)
+        logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
+        logo_label.grid(row=2, column=0, sticky=SW, pady=5)
 
         # 启动GUI
         self.root.mainloop()
