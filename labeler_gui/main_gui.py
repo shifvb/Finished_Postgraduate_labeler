@@ -498,16 +498,16 @@ class Labeler(object):
         Label(label_display_frame, textvariable=self.current_class_number, font=self._BIG_FONT).grid(row=0, column=1)
 
         # 2.4 图片导航面板
-        navi_frame = LabelFrame(upper_right_frame, text='导航', font=self._BIG_FONT)
+        navi_frame = LabelFrame(upper_right_frame, text='图像导航', font=self._BIG_FONT)
         navi_frame.grid(row=1, column=0, sticky=NW)
-        prev_img_btn = Button(navi_frame, width=13, height=2, command=self.prev_image_btn_callback, text='向前(←)')
+        prev_img_btn = Button(navi_frame, width=13, height=2, command=self.prev_image_btn_callback, text='前一张(←)')
         prev_img_btn.config(font=self._BIG_FONT)
         prev_img_btn.pack(side=LEFT, padx=6, pady=3)
         save_label_btn = Button(navi_frame, width=20, height=2, command=self.save_label_btn_callback,
                                 text='保存标签(Ctrl+S)')
         save_label_btn.config(font=self._BIG_FONT)
         save_label_btn.pack(side=LEFT, padx=7, pady=3)
-        next_img_btn = Button(navi_frame, width=13, height=2, command=self.next_image_btn_callback, text='向后(→)')
+        next_img_btn = Button(navi_frame, width=13, height=2, command=self.next_image_btn_callback, text='后一张(→)')
         next_img_btn.config(font=self._BIG_FONT)
         next_img_btn.pack(side=LEFT, padx=7, pady=6)
 
