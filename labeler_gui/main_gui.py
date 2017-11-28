@@ -12,6 +12,7 @@ from labeler_util.ImageLoader import ImageLoader
 from labeler_util.gen_colors import gen_colors
 from labeler_util.label_box import LabelBox
 from labeler_util.load_patient_info import load_patient_info
+from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 
 
 class Labeler(object):
@@ -257,6 +258,7 @@ class Labeler(object):
         self._load_image()
         self._load_labels()
         self._load_patient_info()
+        self._load_patient_remark()
 
     # -------- load 面板 callback end ----------
 
@@ -302,7 +304,17 @@ class Labeler(object):
 
     # -------- navigation 面板 callback end ----------
 
-    # -------- 功能性函数 start -----------
+    def save_remark_btn_callback(self):
+        """保存病人诊断信息"""
+        if not self.load_mode:  # 没有加载图像此按钮无效
+            return
+        _t = self.diagnosis_text.get("1.0", END)
+        save_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]), _t)
+        showinfo(title="info",
+                 message="已保存到:{}".format(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"])))
+
+        # -------- 功能性函数 start -----------
+
     def _save_label(self):
         # 如果label_file_path所在的文件夹不存在的话，就新建
         if not os.path.exists(os.path.split(self.label_file_path)[0]):
@@ -376,7 +388,11 @@ class Labeler(object):
         self.patient_weight_value.config(text=self.patient_info["patient_weight"])
         self.patient_height_value.config(text=self.patient_info["patient_height"])
         self.patient_tracer_value.config(text=self.patient_info["pet_tracer_name"])
-        # print(self.patient_info)
+
+    def _load_patient_remark(self):
+        """加载病人诊断信息"""
+        _t = load_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]))
+        self.diagnosis_text.insert("1.0", _t)
 
     def _create_label_box(self, xCoord, yCoord):
         # 记录当前状态
@@ -579,9 +595,10 @@ class Labeler(object):
         # 3.2 病人诊断面板
         diagnosis_frame = LabelFrame(bottom_right_frame, text="备注", font=self._MID_FONT)
         diagnosis_frame.grid(row=1, column=0)
-        diagnosis_text = Text(diagnosis_frame, height=13, width=90,  font=self._BIG_FONT, relief=FLAT)
-        diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
-        diagnosis_save_btn = Button(diagnosis_frame, text="保存备注信息", height=1, font=self._BIG_FONT)
+        self.diagnosis_text = Text(diagnosis_frame, height=13, width=90, font=self._BIG_FONT, relief=FLAT)
+        self.diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
+        diagnosis_save_btn = Button(diagnosis_frame, text="保存备注信息", command=self.save_remark_btn_callback)
+        diagnosis_save_btn.config(height=1, font=self._BIG_FONT)
         diagnosis_save_btn.grid(row=1, column=0, sticky=EW)
 
         # todo: delete these
