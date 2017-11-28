@@ -79,14 +79,15 @@ class Labeler(object):
         # 没有加载图像不处理鼠标移动
         if not self.load_mode:
             return
-        # 标注现在鼠标坐标
-        self.ct_image_frame.config(
-            text="CT ({}/{}) x: {}, y: {}".format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
+
         # CT图像指示线
         self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
         self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='yellow')
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
         self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
+        # 标注现在鼠标坐标
+        self.ct_image_frame.config(
+            text="CT ({}/{}) x: {}, y: {}".format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
@@ -102,10 +103,12 @@ class Labeler(object):
             # 当前原始SUV值
             _x = min(int(event.x / self._PSIZE * self.ori_suv_array.shape[0]), self.ori_suv_array.shape[0] - 1)
             _y = min(int(event.y / self._PSIZE * self.ori_suv_array.shape[1]), self.ori_suv_array.shape[1] - 1)
-
+            # 当前SUV值
             ori_suv_value = self.ori_suv_array[_x][_y] if self.ori_suv_array[_x][_y] > 1e-2 else 0.0
-            self.pet_image_frame.config(text="PET ({}/{}) 当前SUV值: {:.3}".format(
-                self.image_cursor, len(self.ct_image_list), ori_suv_value))
+            # 当前z分数
+            _z_score = (ori_suv_value - self.ori_suv_array.mean()) / self.ori_suv_array.std()
+            self.pet_image_frame.config(text="PET ({}/{}) 当前SUV值: {:.3}, z分数: {:.3}".format(
+                self.image_cursor, len(self.ct_image_list), ori_suv_value, _z_score))
 
         # 画标签框
         if self.mouse_clicked:
