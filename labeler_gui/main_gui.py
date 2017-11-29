@@ -43,6 +43,7 @@ class Labeler(object):
         self._PSIZE = 480  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
+        self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
         # GUI_鼠标
         self.mouse_clicked = False  # 追踪鼠标是否点击，点击奇数次为True，偶数次为False
         self.current_mouse_x = 0  # 当前鼠标x
@@ -86,8 +87,8 @@ class Labeler(object):
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
         self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
         # 标注现在鼠标坐标
-        self.ct_image_frame.config(
-            text="CT ({}/{}) x: {}, y: {}".format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
+        self.ct_image_frmae_label.config(
+            text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
@@ -290,7 +291,7 @@ class Labeler(object):
         self.ct_canvas.config(width=max(self.ct_tk_img.width(), self._PSIZE),
                               height=max(self.ct_tk_img.height(), self._PSIZE))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
-        self.ct_image_frame.config(text="CT ({}/{})".format(self.image_cursor, len(self.ct_image_list)))
+        self.ct_image_frmae_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), 0, 0))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # 加载SUV图像
@@ -337,9 +338,12 @@ class Labeler(object):
                     self.bbox_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
     def _load_patient_info(self):
+        if self.load_mode == 'CT':
+            return
         self.patient_info = load_patient_info(self.ct_workspace, self.pet_workspace)
         self.patient_id_value.config(text=self.patient_info["patient_id"])
-        self.patient_name_value.config(text=self.patient_info["patient_name"])
+        if self.cfg["show_patient_name"] is True:
+            self.patient_name_value.config(text=self.patient_info["patient_name"])
         self.patient_birthday_value.config(text=self.patient_info["patient_birthday"])
         self.patient_sex_value.config(text=self.patient_info["patient_sex"])
         self.patient_age_value.config(text=self.patient_info["patient_age"])
@@ -396,15 +400,19 @@ class Labeler(object):
         self.root.bind("<Control-KeyPress-s>", self.save_label_btn_callback)
 
         # 1.1 CT图像面板
-        self.ct_image_frame = LabelFrame(self.root, text="CT")
-        self.ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
-        self.ct_canvas = Canvas(self.ct_image_frame, height=self._PSIZE, width=self._PSIZE)
+        ct_image_frame = Frame(self.root)
+        ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
+        self.ct_image_frmae_label = Label(ct_image_frame, text=self.CT_F_TITLE.format(0, 0, 0, 0), font=self._MID_FONT)
+        self.ct_image_frmae_label.pack()
+        ct_canvas_frame = LabelFrame(ct_image_frame)
+        ct_canvas_frame.pack()
+        self.ct_canvas = Canvas(ct_canvas_frame, height=self._PSIZE, width=self._PSIZE)
         self.ct_canvas.bind("<Button-1>", self.mouse_click_callback)
         self.ct_canvas.bind("<Motion>", self.mouse_move_callback)
-        self.ct_canvas.grid(row=0, column=0)
+        self.ct_canvas.pack()
 
         # 1.2 PET图像面板
-        self.pet_image_frame = LabelFrame(self.root, text="PET")
+        self.pet_image_frame = LabelFrame(self.root, text="PET", font=self._MID_FONT)
         self.pet_image_frame.grid(row=0, column=1, sticky=NW, padx=5)
         self.pet_canvas = Canvas(self.pet_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.pet_canvas.pack()
@@ -416,7 +424,7 @@ class Labeler(object):
         self.zoom_canvas.pack()
 
         # 1.4 SUV图像面板
-        suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)")
+        suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)", font=self._MID_FONT)
         suv_image_frame.grid(row=1, column=1, sticky=NW, padx=5)
         self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
