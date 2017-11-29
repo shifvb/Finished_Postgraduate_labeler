@@ -356,7 +356,8 @@ class Labeler(object):
     def _load_patient_remark(self):
         """加载病人诊断信息"""
         _t = load_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]))
-        self.diagnosis_text.insert("1.0", _t)
+        self.diagnosis_text.delete("1.0", END)  # 先清空
+        self.diagnosis_text.insert("1.0", _t)  # 再填入
 
     def _create_label_box(self, xCoord, yCoord):
         # 记录当前状态
