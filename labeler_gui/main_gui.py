@@ -40,7 +40,7 @@ class Labeler(object):
         self.label_box_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
         self.curr_label_box_id = -1  # 用来储存当前创建的标签框id的变量
         # GUI相关常量
-        self._PSIZE = 480  # PSIZE: panel size, 显示图像大小
+        self._PSIZE = 470  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
         self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
@@ -416,8 +416,8 @@ class Labeler(object):
         # 1.2 PET图像面板
         pet_frame = Frame(self.root)
         pet_frame.grid(row=0, column=1, sticky=NW, padx=5)
-        self.pet_frame_label = Label(pet_frame,
-                                     text=self.PET_F_TITLE.format(0, 0, "%.3f" % 0, "%+.3f" % 0), font=self._MID_FONT)
+        self.pet_frame_label = Label(pet_frame, font=self._MID_FONT)
+        self.pet_frame_label.config(text=self.PET_F_TITLE.format(0, 0, "%.3f" % 0, "%+.3f" % 0))
         self.pet_frame_label.pack()
         pet_canvas_frame = LabelFrame(pet_frame)
         pet_canvas_frame.pack()
@@ -425,8 +425,12 @@ class Labeler(object):
         self.pet_canvas.pack()
 
         # 1.3 显示放大区域的面板
-        zoomed_area_frame = LabelFrame(self.root, text="放大显示", font=self._MID_FONT)
-        zoomed_area_frame.grid(row=1, column=0, sticky=NW, padx=5)
+        zoomed_frame = Frame(self.root)
+        zoomed_frame.grid(row=1, column=0, sticky=NW, padx=5)
+        zoomed_frame_label = Label(zoomed_frame, text="标签放大", font=self._MID_FONT)
+        zoomed_frame_label.pack()
+        zoomed_area_frame = LabelFrame(zoomed_frame)
+        zoomed_area_frame.pack()
         self.zoom_canvas = Canvas(zoomed_area_frame, height=self._PSIZE, width=self._PSIZE)
         self.zoom_canvas.pack()
 
