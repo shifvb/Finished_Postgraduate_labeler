@@ -122,52 +122,7 @@ class Labeler(object):
 
     # -------- 创建图像标签 面板 callback end ----------
 
-    # ------- 显示优化标签 面板 callback start ---------
 
-    def generate_active_contour_callback(self):
-        # 没有加载图像此按钮无效
-        if not self.load_mode:
-            return
-        # 如果没有选定删除标签，那么直接结束
-        if not self.bbox_listbox.curselection():
-            return
-        # 返回当前选定的标签的index
-        index = self.bbox_listbox.curselection()[0]
-
-        from skimage.segmentation import active_contour
-        import numpy
-        print(self.label_list[index])
-        _x1 = self.label_list[index].x1
-        _y1 = self.label_list[index].y1
-        _x2 = self.label_list[index].x2
-        _y2 = self.label_list[index].y2
-        # 生成图像
-        _img = Image.open(self.ct_image_list[self.image_cursor - 1])
-        self.opt_tk_img = ImageTk.PhotoImage(_img)
-
-        def _gen_points(start_point, end_point, n=50):
-            a = numpy.linspace(start_point[0], end_point[0], num=n)
-            b = numpy.linspace(start_point[1], end_point[1], num=n)
-            c = numpy.empty(shape=[n, 2])
-            for row_num in range(c.shape[0]):
-                for col_num in range(c.shape[1]):
-                    c[row_num][col_num] = a[row_num] if col_num == 0 else b[row_num]
-            return c
-
-        _r = active_contour(_img, snake=numpy.concatenate(
-            (_gen_points([_x1, _y1], [_x1, _y2]), _gen_points([_x1, _y2], [_x2, _y2]),
-             _gen_points([_x2, _y2], [_x2, _y1]), _gen_points([_x2, _y1], [_x1, _y1])), axis=0)
-                            )
-
-        # 显示图像
-        self.opt_panel.create_image(0, 0, image=self.opt_tk_img, anchor=NW)
-        self.opt_panel.delete(self.opt_mask_id) if hasattr(self, "opt_mask_id") else None  # todo : define it
-        # 显示点
-        for x, y in _r:
-            print(x, y)
-            self.opt_panel.create_rectangle(x - 1, y - 1, x, y, width=1, outline="#ff0000")
-
-    # -------- 显示优化标签 面板 callback end ----------
 
     # -------- 标签增删 面板 callback start ----------
     def del_bbox_btn_callback(self):
@@ -454,20 +409,17 @@ class Labeler(object):
         self.pet_canvas = Canvas(self.pet_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.pet_canvas.pack()
 
-        # 1.3 SUV图像面板
+        # 1.3 显示放大区域的面板
+        zoomed_area_frame = LabelFrame(self.root, text="放大显示", font=self._MID_FONT)
+        zoomed_area_frame.grid(row=1, column=0, sticky=NW, padx=5)
+        self.zoom_canvas = Canvas(zoomed_area_frame, height=self._PSIZE, width=self._PSIZE)
+        self.zoom_canvas.pack()
+
+        # 1.4 SUV图像面板
         suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)")
-        suv_image_frame.grid(row=1, column=0, sticky=NW, padx=5)
+        suv_image_frame.grid(row=1, column=1, sticky=NW, padx=5)
         self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
-
-        # 1.4 用来显示算法结果的副面板
-        self.optimized_label_frame = LabelFrame(self.root, text="优化标签")
-        self.optimized_label_frame.grid(row=1, column=1, sticky=NW, padx=5)
-        self.opt_panel = Canvas(self.optimized_label_frame, height=self._PSIZE, width=self._PSIZE)
-        self.opt_panel.pack()
-        # self.opt_btn = Button(self.optimized_label_frame, text='generate active contour',
-        #                       command=self.generate_active_contour_callback)
-        # self.opt_btn.pack()
 
         # 2. 右上角面板
         upper_right_frame = Frame(self.root)
@@ -599,7 +551,7 @@ class Labeler(object):
         # 3.2 病人诊断面板
         diagnosis_frame = LabelFrame(bottom_right_frame, text="参考", font=self._MID_FONT)
         diagnosis_frame.grid(row=1, column=0)
-        self.diagnosis_text = Text(diagnosis_frame, height=12, width=90, font=self._BIG_FONT, relief=FLAT)
+        self.diagnosis_text = Text(diagnosis_frame, height=13, width=90, font=self._BIG_FONT, relief=FLAT)
         self.diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
         diagnosis_save_btn = Button(diagnosis_frame, text="保存参考信息", command=self.save_remark_btn_callback)
         diagnosis_save_btn.config(height=1, font=self._BIG_FONT)
@@ -608,7 +560,7 @@ class Labeler(object):
         # 6. logo
         logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
         logo_label.config(font=self._BIG_FONT)
-        logo_label.grid(row=2, column=0, sticky=SW, pady=10)
+        logo_label.grid(row=2, column=0, sticky=EW, pady=10)
 
         # 启动GUI
         self.root.mainloop()
