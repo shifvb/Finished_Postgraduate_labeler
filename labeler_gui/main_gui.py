@@ -44,6 +44,7 @@ class Labeler(object):
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
         self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
+        self.PET_F_TITLE = "PET({:03}/{:03}) 当前SUV值:{}, z分数:{}"
         # GUI_鼠标
         self.mouse_clicked = False  # 追踪鼠标是否点击，点击奇数次为True，偶数次为False
         self.current_mouse_x = 0  # 当前鼠标x
@@ -87,7 +88,7 @@ class Labeler(object):
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
         self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
         # 标注现在鼠标坐标
-        self.ct_image_frmae_label.config(
+        self.ct_frame_label.config(
             text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
@@ -108,8 +109,8 @@ class Labeler(object):
             ori_suv_value = self.ori_suv_array[_x][_y] if self.ori_suv_array[_x][_y] > 1e-2 else 0.0
             # 当前z分数
             _z_score = (ori_suv_value - self.ori_suv_array.mean()) / self.ori_suv_array.std()
-            self.pet_image_frame.config(text="PET ({}/{}) 当前SUV值: {:.3}, z分数: {:.3}".format(
-                self.image_cursor, len(self.ct_image_list), ori_suv_value, _z_score))
+            self.pet_frame_label.config(text=self.PET_F_TITLE.format(
+                self.image_cursor, len(self.ct_image_list), "%.3f" % ori_suv_value, "%+.3f" % _z_score))
 
         # 画标签框
         if self.mouse_clicked:
@@ -291,7 +292,7 @@ class Labeler(object):
         self.ct_canvas.config(width=max(self.ct_tk_img.width(), self._PSIZE),
                               height=max(self.ct_tk_img.height(), self._PSIZE))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
-        self.ct_image_frmae_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), 0, 0))
+        self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), 0, 0))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # 加载SUV图像
@@ -308,7 +309,8 @@ class Labeler(object):
             self.pet_tk_img = ImageTk.PhotoImage(
                 Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
-            self.pet_image_frame.config(text="PET ({}/{})".format(self.image_cursor, len(self.pet_image_list)))
+            self.pet_frame_label.config(
+                text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list), "%.3f" % 0, "%+.3f" % 0))
 
     def _load_labels(self):
         # 清除已有标签
@@ -400,11 +402,11 @@ class Labeler(object):
         self.root.bind("<Control-KeyPress-s>", self.save_label_btn_callback)
 
         # 1.1 CT图像面板
-        ct_image_frame = Frame(self.root)
-        ct_image_frame.grid(row=0, column=0, sticky=NW, padx=5)
-        self.ct_image_frmae_label = Label(ct_image_frame, text=self.CT_F_TITLE.format(0, 0, 0, 0), font=self._MID_FONT)
-        self.ct_image_frmae_label.pack()
-        ct_canvas_frame = LabelFrame(ct_image_frame)
+        ct_frame = Frame(self.root)
+        ct_frame.grid(row=0, column=0, sticky=NW, padx=5)
+        self.ct_frame_label = Label(ct_frame, text=self.CT_F_TITLE.format(0, 0, 0, 0), font=self._MID_FONT)
+        self.ct_frame_label.pack()
+        ct_canvas_frame = LabelFrame(ct_frame)
         ct_canvas_frame.pack()
         self.ct_canvas = Canvas(ct_canvas_frame, height=self._PSIZE, width=self._PSIZE)
         self.ct_canvas.bind("<Button-1>", self.mouse_click_callback)
@@ -412,9 +414,14 @@ class Labeler(object):
         self.ct_canvas.pack()
 
         # 1.2 PET图像面板
-        self.pet_image_frame = LabelFrame(self.root, text="PET", font=self._MID_FONT)
-        self.pet_image_frame.grid(row=0, column=1, sticky=NW, padx=5)
-        self.pet_canvas = Canvas(self.pet_image_frame, height=self._PSIZE, width=self._PSIZE)
+        pet_frame = Frame(self.root)
+        pet_frame.grid(row=0, column=1, sticky=NW, padx=5)
+        self.pet_frame_label = Label(pet_frame,
+                                     text=self.PET_F_TITLE.format(0, 0, "%.3f" % 0, "%+.3f" % 0), font=self._MID_FONT)
+        self.pet_frame_label.pack()
+        pet_canvas_frame = LabelFrame(pet_frame)
+        pet_canvas_frame.pack()
+        self.pet_canvas = Canvas(pet_canvas_frame, height=self._PSIZE, width=self._PSIZE)
         self.pet_canvas.pack()
 
         # 1.3 显示放大区域的面板
