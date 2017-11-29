@@ -40,7 +40,7 @@ class Labeler(object):
         self.label_box_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
         self.curr_label_box_id = -1  # 用来储存当前创建的标签框id的变量
         # GUI相关常量
-        self._PSIZE = 470  # PSIZE: panel size, 显示图像大小
+        self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
         self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
@@ -435,9 +435,13 @@ class Labeler(object):
         self.zoom_canvas.pack()
 
         # 1.4 SUV图像面板
-        suv_image_frame = LabelFrame(self.root, text="PET (SUV > 2.0)", font=self._MID_FONT)
-        suv_image_frame.grid(row=1, column=1, sticky=NW, padx=5)
-        self.suv_canvas = Canvas(suv_image_frame, height=self._PSIZE, width=self._PSIZE)
+        suv_frame = Frame(self.root)
+        suv_frame.grid(row=1, column=1, sticky=NW, padx=5)
+        suv_frame_label = Label(suv_frame, text="PET (SUV > 2.0)", font=self._MID_FONT)
+        suv_frame_label.pack()
+        suv_canvas_frame = LabelFrame(suv_frame)
+        suv_canvas_frame.pack()
+        self.suv_canvas = Canvas(suv_canvas_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
 
         # 2. 右上角面板
