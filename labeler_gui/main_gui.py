@@ -540,8 +540,7 @@ class Labeler(object):
         _p_pady = 16
         patient_id_label = Label(patient_info_k_frame, text="ID:", font=self._BIG_FONT)
         patient_id_label.grid(row=0, column=0, sticky=W, pady=_p_pady)
-        patient_name_label = Label(patient_info_k_frame, text="姓名:", font=self._BIG_FONT)
-        patient_name_label.grid(row=1, column=0, sticky=W, pady=_p_pady)
+
         patient_height_label = Label(patient_info_k_frame, text="身高:", font=self._BIG_FONT)
         patient_height_label.grid(row=2, column=0, sticky=W, pady=_p_pady)
         patient_weight_label = Label(patient_info_k_frame, text="体重:", font=self._BIG_FONT)
@@ -557,8 +556,11 @@ class Labeler(object):
         Label(patient_info_frame, width=36, font=self._BIG_FONT).grid(row=1, column=0, columnspan=2, sticky=W)
         self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_id_value.grid(row=0, column=0, sticky=E, pady=_p_pady)
-        self.patient_name_value = Label(patient_info_v_frame, font=self._BIG_FONT)
-        self.patient_name_value.grid(row=1, column=0, sticky=E, pady=_p_pady)
+        if self.cfg["show_patient_name"] is True:
+            patient_name_label = Label(patient_info_k_frame, text="姓名:", font=self._BIG_FONT)
+            patient_name_label.grid(row=1, column=0, sticky=W, pady=_p_pady)
+            self.patient_name_value = Label(patient_info_v_frame, font=self._BIG_FONT)
+            self.patient_name_value.grid(row=1, column=0, sticky=E, pady=_p_pady)
         self.patient_height_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_height_value.grid(row=2, column=0, sticky=E, pady=_p_pady)
         self.patient_weight_value = Label(patient_info_v_frame, font=self._BIG_FONT)

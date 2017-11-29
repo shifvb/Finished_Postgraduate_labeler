@@ -12,5 +12,6 @@ def load_config_from_ini():
             cfg_dict[k] = v
     # handle read config
     cfg_dict["label_number"] = int(cfg_dict["label_number"])
+    cfg_dict["show_patient_name"] = cfg_dict["show_patient_name"] == "1"
     # return
     return cfg_dict
