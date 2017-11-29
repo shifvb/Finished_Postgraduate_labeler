@@ -313,7 +313,7 @@ class Labeler(object):
             return
         _t = self.diagnosis_text.get("1.0", END)
         save_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]), _t)
-        showinfo(title="info",
+        showinfo(title="信息",
                  message="已保存到:{}".format(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"])))
 
         # -------- 功能性函数 start -----------
@@ -596,11 +596,11 @@ class Labeler(object):
         load_dir_label.grid(row=2, column=1, sticky=W, )
 
         # 3.2 病人诊断面板
-        diagnosis_frame = LabelFrame(bottom_right_frame, text="备注", font=self._MID_FONT)
+        diagnosis_frame = LabelFrame(bottom_right_frame, text="参考", font=self._MID_FONT)
         diagnosis_frame.grid(row=1, column=0)
         self.diagnosis_text = Text(diagnosis_frame, height=13, width=90, font=self._BIG_FONT, relief=FLAT)
         self.diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
-        diagnosis_save_btn = Button(diagnosis_frame, text="保存备注信息", command=self.save_remark_btn_callback)
+        diagnosis_save_btn = Button(diagnosis_frame, text="保存参考信息", command=self.save_remark_btn_callback)
         diagnosis_save_btn.config(height=1, font=self._BIG_FONT)
         diagnosis_save_btn.grid(row=1, column=0, sticky=EW)
 
