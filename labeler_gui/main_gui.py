@@ -121,25 +121,27 @@ class Labeler(object):
 
 
     # -------- 标签增删 面板 callback start ----------
-    def del_bbox_btn_callback(self):
-        """bboxControl 面板 删除标签 callback"""
+    def del_label_btn_callback(self):
+        """删除标签 callback"""
         # 没有加载图像此按钮无效
         if not self.load_mode:
             return
         # 如果没有选定删除标签，那么直接结束
-        if not self.bbox_listbox.curselection():
+        if not self.label_listbox.curselection():
             return
         # 返回当前选定的标签的index
-        index = self.bbox_listbox.curselection()[0]
-        # 删除主面板bbox
+        index = self.label_listbox.curselection()[0]
+        # 删除面板上的标签
         self.ct_canvas.delete(self.ct_label_id_list[index])
-        # 删除bbox面板
-        self.bbox_listbox.delete(index)
+        self.pet_canvas.delete(self.pet_label_id_list[index])
+        # 删除标签显示面板上的标签
+        self.label_listbox.delete(index)
         # 清除跟踪的列表
         self.ct_label_id_list.pop(index)
+        self.pet_label_id_list.pop(index)
         self.label_list.pop(index)
 
-    def clear_bbox_callback(self):
+    def clear_label_callback(self):
         """bboxControl 面板 清除所有标签 callback"""
         # 没有加载图像此按钮无效
         if not self.load_mode:
@@ -147,10 +149,13 @@ class Labeler(object):
         # 根据bbox_id_list，将主面板上的所有方框清除
         for bbox_id in self.ct_label_id_list:
             self.ct_canvas.delete(bbox_id)
+        for bbox_id in self.pet_label_id_list:
+            self.pet_canvas.delete(bbox_id)
         # 将bbox面板上listbox组件的所有元素删除
-        self.bbox_listbox.delete(0, len(self.label_list))
+        self.label_listbox.delete(0, len(self.label_list))
         # 清除跟踪的列表
         self.ct_label_id_list = list()
+        self.pet_label_id_list = list()
         self.label_list.clear()
 
     # -------- 标签增删 面板 callback end ----------
@@ -306,7 +311,7 @@ class Labeler(object):
 
     def _load_labels(self):
         # 清除已有标签
-        self.clear_bbox_callback()
+        self.clear_label_callback()
         # 计算标签绝对路径(self.ct_workspace + _output_label_folder_name + _file_name)
         _file_name = os.path.splitext(os.path.split(self.ct_image_list[self.image_cursor - 1])[-1])[0] + '.txt'
         self.label_file_path = os.path.join(self.ct_workspace, self.cfg['label_output_folder'], _file_name)
@@ -317,7 +322,7 @@ class Labeler(object):
                     # 加载标签
                     self.label_list.append(LabelBox.from_yolo(
                         *[float(_) if i != 0 else int(_) for i, _ in enumerate(line.split())],
-                        self.ct_tk_img.width(), self.ct_tk_img.height()
+                        self._PSIZE, self._PSIZE
                     ))
                     # 设置颜色
                     self._color = self.color_generator.send("g")
@@ -330,9 +335,9 @@ class Labeler(object):
                                                                 width=2, outline=self._color)
                     self.pet_label_id_list.append(_temp_id)
                     # 在标签增删面板上增加一个标签
-                    self.bbox_listbox.insert(END, '({:3}, {:3})->({:3}, {:3}) [Class {}]'
-                                             .format(_label.x1, _label.y1, _label.x2, _label.y2, _label.class_id))
-                    self.bbox_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
+                    self.label_listbox.insert(END, '({:3}, {:3})->({:3}, {:3}) [Class {}]'
+                                              .format(_label.x1, _label.y1, _label.x2, _label.y2, _label.class_id))
+                    self.label_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
     def _load_patient_info(self):
         if self.load_mode == 'CT':
@@ -371,10 +376,10 @@ class Labeler(object):
             # 更新GUI界面中标签面板
             self.ct_label_id_list.append(self.curr_ct_label_id)
             self.pet_label_id_list.append(self.curr_pet_label_id)
-            self.bbox_listbox.insert(END,
-                                     '({:3}, {:3})->({:3}, {:3}) [Class {}]'.format(x1, y1, x2, y2,
-                                                                                    self.current_class_number.get()))
-            self.bbox_listbox.itemconfig(len(self.ct_label_id_list) - 1, fg=self._color)
+            self.label_listbox.insert(END,
+                                      '({:3}, {:3})->({:3}, {:3}) [Class {}]'.format(x1, y1, x2, y2,
+                                                                                     self.current_class_number.get()))
+            self.label_listbox.itemconfig(len(self.ct_label_id_list) - 1, fg=self._color)
             self._color = self.color_generator.send("r")
             # 将当前的GUI矩形的id设为None，这样在鼠标移动的时候，就不会被处理鼠标移动的回调函数删除
             self.curr_ct_label_id = None
@@ -449,16 +454,16 @@ class Labeler(object):
         # 2.1 显示标签面板
         self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._MID_FONT)
         self.bbox_frame.grid(row=0, column=0, sticky=NW)
-        self.bbox_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT, relief=FLAT)
-        self.bbox_listbox.grid(row=0, column=0)
+        self.label_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT, relief=FLAT)
+        self.label_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
-        bbox_listbox_scroll_bar['command'] = self.bbox_listbox.yview
-        self.bbox_listbox['yscrollcommand'] = bbox_listbox_scroll_bar.set
-        del_bbox_btn = Button(self.bbox_frame, command=self.del_bbox_btn_callback, text='删除选定标签')
+        bbox_listbox_scroll_bar['command'] = self.label_listbox.yview
+        self.label_listbox['yscrollcommand'] = bbox_listbox_scroll_bar.set
+        del_bbox_btn = Button(self.bbox_frame, command=self.del_label_btn_callback, text='删除选定标签')
         del_bbox_btn.config(font=self._BIG_FONT)
         del_bbox_btn.grid(row=1, column=0, columnspan=2, sticky=NSEW, pady=1)
-        clear_bbox_btn = Button(self.bbox_frame, command=self.clear_bbox_callback, text='清除所有标签')
+        clear_bbox_btn = Button(self.bbox_frame, command=self.clear_label_callback, text='清除所有标签')
         clear_bbox_btn.config(font=self._BIG_FONT)
         clear_bbox_btn.grid(row=2, column=0, columnspan=2, sticky=NSEW)
 
