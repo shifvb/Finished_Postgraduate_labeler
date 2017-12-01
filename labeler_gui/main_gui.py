@@ -199,11 +199,10 @@ class Labeler(object):
                                      self.ct_workspace,
                                      self.cfg['ct_output_folder_name'],
                                      self.pet_workspace,
-                                     self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'],
-                                     self.cfg['ori_suv_output_folder_name'])  # todo change it
+                                     self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'])
         self.ct_image_list = self.image_loader.cts
         self.pet_image_list = self.image_loader.pets
-        self.suv_value_list = self.image_loader.ori_suvs  # todo change it
+        self.suv_value_list = self.image_loader.suvs
 
         # default to the 1st image in the collection
         self.image_cursor = 1
