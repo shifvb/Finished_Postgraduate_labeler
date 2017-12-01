@@ -37,8 +37,10 @@ class Labeler(object):
         self.ct_tk_img = None  # 创建标签面板的图像
         self._color = None  # 用来储存某些组件当前所用颜色的变量
         self.label_list = []  # 用来存储当前标签的list
-        self.label_box_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
-        self.curr_label_box_id = -1  # 用来储存当前创建的标签框id的变量
+        self.ct_label_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
+        self.pet_label_id_list = []
+        self.curr_ct_label_id = -1  # 用来储存当前创建的标签框id的变量
+        self.curr_pet_label_id = -1
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
@@ -55,12 +57,12 @@ class Labeler(object):
         self.init_gui()  # 加载GUI组件
 
     # -------- 创建图像标签 面板 callback start ----------
-    def mouse_click_callback(self, event):
+    def ct_mouse_click_callback(self, event):
         """创建标签面板鼠标按下回调函数"""
         # 没有加载图像不处理
         if not self.load_mode:
             return
-        if self.current_mouse_x > self.ct_tk_img.width() or self.current_mouse_y > self.ct_tk_img.height():
+        if self.current_mouse_x > self._PSIZE or self.current_mouse_y > self._PSIZE:
             return
         self._create_label_box(event.x, event.y)
 
@@ -77,7 +79,7 @@ class Labeler(object):
         """ESC键位用来取消当前创建的标签"""
         self._cancel_create_label(event)
 
-    def mouse_move_callback(self, event):
+    def ct_mouse_move_callback(self, event):
         # 没有加载图像不处理鼠标移动
         if not self.load_mode:
             return
@@ -114,16 +116,63 @@ class Labeler(object):
 
         # 画标签框
         if self.mouse_clicked:
-            self.ct_canvas.delete(self.curr_label_box_id) if self.curr_label_box_id else None
+            self.ct_canvas.delete(self.curr_ct_label_id) if self.curr_ct_label_id else None
+            self.pet_canvas.delete(self.curr_pet_label_id) if self.curr_pet_label_id else None
             self._color = self.color_generator.send("b")
-            self.curr_label_box_id = self.ct_canvas.create_rectangle(self.old_mouse_x, self.old_mouse_y,
-                                                                     event.x, event.y, width=2, outline=self._color)
+            self.curr_ct_label_id = self.ct_canvas.create_rectangle(self.old_mouse_x, self.old_mouse_y,
+                                                                    event.x, event.y, width=2, outline=self._color)
+            self.curr_pet_label_id = self.pet_canvas.create_rectangle(self.old_mouse_x, self.old_mouse_y,
+                                                                      event.x, event.y, width=2, outline=self._color)
+        # 因为这个函数是鼠标移动的回调函数，所以记录当前鼠标的坐标
+        self.current_mouse_x = event.x
+        self.current_mouse_y = event.y
+
+    def pet_mouse_move_callback(self, event):
+        # 没有加载图像不处理鼠标移动
+        if not self.load_mode:
+            return
+
+        # CT图像指示线
+        self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
+        self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='yellow')
+        self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
+        self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
+        # 标注现在鼠标坐标
+        self.ct_frame_label.config(
+            text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
+        # 如果是PET_CT模式
+        if self.load_mode == 'PET_CT':
+            # SUV图像指示线
+            self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
+            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
+            self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
+            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+            # PET图像指示线
+            self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
+            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
+            self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
+            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+            # 当前原始SUV值
+            _x = min(int(event.x / self._PSIZE * self.suv_value_array.shape[0]), self.suv_value_array.shape[0] - 1)
+            _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
+            # 当前SUV值
+            suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
+            # 当前z分数
+            _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
+            self.pet_frame_label.config(text=self.PET_F_TITLE.format(
+                self.image_cursor, len(self.ct_image_list), "%.3f" % suv_value, "%+.3f" % _z_score))
+
+        # 画标签框
+        if self.mouse_clicked:
+            self.ct_canvas.delete(self.curr_ct_label_id) if self.curr_ct_label_id else None
+            self._color = self.color_generator.send("b")
+            self.curr_ct_label_id = self.ct_canvas.create_rectangle(self.old_mouse_x, self.old_mouse_y,
+                                                                    event.x, event.y, width=2, outline=self._color)
         # 因为这个函数是鼠标移动的回调函数，所以记录当前鼠标的坐标
         self.current_mouse_x = event.x
         self.current_mouse_y = event.y
 
     # -------- 创建图像标签 面板 callback end ----------
-
 
 
     # -------- 标签增删 面板 callback start ----------
@@ -138,11 +187,11 @@ class Labeler(object):
         # 返回当前选定的标签的index
         index = self.bbox_listbox.curselection()[0]
         # 删除主面板bbox
-        self.ct_canvas.delete(self.label_box_id_list[index])
+        self.ct_canvas.delete(self.ct_label_id_list[index])
         # 删除bbox面板
         self.bbox_listbox.delete(index)
         # 清除跟踪的列表
-        self.label_box_id_list.pop(index)
+        self.ct_label_id_list.pop(index)
         self.label_list.pop(index)
 
     def clear_bbox_callback(self):
@@ -151,12 +200,12 @@ class Labeler(object):
         if not self.load_mode:
             return
         # 根据bbox_id_list，将主面板上的所有方框清除
-        for bbox_id in self.label_box_id_list:
+        for bbox_id in self.ct_label_id_list:
             self.ct_canvas.delete(bbox_id)
         # 将bbox面板上listbox组件的所有元素删除
         self.bbox_listbox.delete(0, len(self.label_list))
         # 清除跟踪的列表
-        self.label_box_id_list = list()
+        self.ct_label_id_list = list()
         self.label_list.clear()
 
     # -------- 标签增删 面板 callback end ----------
@@ -331,7 +380,7 @@ class Labeler(object):
                     _label = self.label_list[-1]
                     _temp_id = self.ct_canvas.create_rectangle(_label.x1, _label.y1, _label.x2, _label.y2,
                                                                width=2, outline=self._color)
-                    self.label_box_id_list.append(_temp_id)
+                    self.ct_label_id_list.append(_temp_id)
                     # 在标签增删面板上增加一个标签
                     self.bbox_listbox.insert(END, '({:3}, {:3})->({:3}, {:3}) [Class {}]'
                                              .format(_label.x1, _label.y1, _label.x2, _label.y2, _label.class_id))
@@ -372,19 +421,21 @@ class Labeler(object):
             # 记录一下新建的label的（左上角，右下角）坐标
             self.label_list.append(LabelBox(self.current_class_number.get(), x1, y1, x2, y2))
             # 更新GUI界面中标签面板
-            self.label_box_id_list.append(self.curr_label_box_id)
+            self.ct_label_id_list.append(self.curr_ct_label_id)
+            self.pet_label_id_list.append(self.curr_pet_label_id)
             self.bbox_listbox.insert(END,
                                      '({:3}, {:3})->({:3}, {:3}) [Class {}]'.format(x1, y1, x2, y2,
                                                                                     self.current_class_number.get()))
-            self.bbox_listbox.itemconfig(len(self.label_box_id_list) - 1, fg=self._color)
+            self.bbox_listbox.itemconfig(len(self.ct_label_id_list) - 1, fg=self._color)
             self._color = self.color_generator.send("r")
             # 将当前的GUI矩形的id设为None，这样在鼠标移动的时候，就不会被处理鼠标移动的回调函数删除
-            self.curr_label_box_id = None
+            self.curr_ct_label_id = None
+            self.curr_pet_label_id = None
 
     def _cancel_create_label(self, event):
         """取消创建标签 callback"""
         self.mouse_clicked = False
-        self.ct_canvas.delete(self.curr_label_box_id)
+        self.ct_canvas.delete(self.curr_ct_label_id)
 
     # -------- 功能性函数  end  -----------
 
@@ -408,8 +459,8 @@ class Labeler(object):
         ct_canvas_frame = LabelFrame(ct_frame)
         ct_canvas_frame.pack()
         self.ct_canvas = Canvas(ct_canvas_frame, height=self._PSIZE, width=self._PSIZE)
-        self.ct_canvas.bind("<Button-1>", self.mouse_click_callback)
-        self.ct_canvas.bind("<Motion>", self.mouse_move_callback)
+        self.ct_canvas.bind("<Button-1>", self.ct_mouse_click_callback)
+        self.ct_canvas.bind("<Motion>", self.ct_mouse_move_callback)
         self.ct_canvas.pack()
 
         # 1.2 PET图像面板
@@ -421,6 +472,8 @@ class Labeler(object):
         pet_canvas_frame = LabelFrame(pet_frame)
         pet_canvas_frame.pack()
         self.pet_canvas = Canvas(pet_canvas_frame, height=self._PSIZE, width=self._PSIZE)
+        self.pet_canvas.bind("<Motion>", self.ct_mouse_move_callback) # todo
+        self.pet_canvas.bind("<Button-1>", self.ct_mouse_click_callback)
         self.pet_canvas.pack()
 
         # 1.3 显示放大区域的面板
