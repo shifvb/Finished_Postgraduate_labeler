@@ -1,5 +1,6 @@
 import os
 import pickle
+import numpy as np
 from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import showerror, showinfo
@@ -15,6 +16,8 @@ from labeler_util.load_patient_info import load_patient_info
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
 from labeler_util.scrollbar_delay import is_enough_time_passed
+from labeler_util.get_enlarged_area import enlarged_area
+from labeler_util.debug_mode import debug_mode
 
 
 class Labeler(object):
@@ -287,8 +290,6 @@ class Labeler(object):
         # 加载CT图像
         ct_image_path = self.ct_image_list[self.image_cursor - 1]
         self.ct_tk_img = ImageTk.PhotoImage(Image.open(ct_image_path).resize([self._PSIZE, self._PSIZE]))
-        self.ct_canvas.config(width=max(self.ct_tk_img.width(), self._PSIZE),
-                              height=max(self.ct_tk_img.height(), self._PSIZE))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
         self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), 0, 0))
         # 如果是PET_CT模式
@@ -377,14 +378,29 @@ class Labeler(object):
             # 更新GUI界面中标签面板
             self.ct_label_id_list.append(self.curr_ct_label_id)
             self.pet_label_id_list.append(self.curr_pet_label_id)
-            self.label_listbox.insert(END,
-                                      '({:3}, {:3})->({:3}, {:3}) [Class {}]'.format(x1, y1, x2, y2,
-                                                                                     self.current_class_number.get()))
+            self.label_listbox.insert(END, '({:3}, {:3})->({:3}, {:3}) [Class {}]'.
+                                      format(x1, y1, x2, y2, self.current_class_number.get()))
             self.label_listbox.itemconfig(len(self.ct_label_id_list) - 1, fg=self._color)
             self._color = self.color_generator.send("r")
             # 将当前的GUI矩形的id设为None，这样在鼠标移动的时候，就不会被处理鼠标移动的回调函数删除
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
+            # 最后，显示一下放大的区域
+            _ctimg = Image.open(self.ct_image_list[self.image_cursor - 1])
+            _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
+                                                self.cfg["enlarge_coefficient"], self.cfg["min_ratio_of_enlarged_image"])
+            _zoomed_coordinates = [int(_ * _ctimg.width) for _ in _zoomed_coordinates]
+            _arr = np.array(_ctimg)[
+                   _zoomed_coordinates[1]: _zoomed_coordinates[3],
+                   _zoomed_coordinates[0]: _zoomed_coordinates[2]]
+            _img = Image.fromarray(_arr, 'L')
+            self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
+            self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
+
+            # ct_image_path = self.ct_image_list[self.image_cursor - 1]
+            # self.ct2_tk_img = ImageTk.PhotoImage(Image.open(ct_image_path).resize([self._PSIZE, self._PSIZE]))
+            # self.zoomed_canvas.create_image(100, 0, image=self.ct2_tk_img, anchor=NW)
+
 
     def _cancel_create_label(self, event):
         """取消创建标签 callback"""
@@ -472,8 +488,8 @@ class Labeler(object):
         zoomed_frame_label.pack()
         zoomed_area_frame = LabelFrame(zoomed_frame)
         zoomed_area_frame.pack()
-        self.zoom_canvas = Canvas(zoomed_area_frame, height=self._PSIZE, width=self._PSIZE)
-        self.zoom_canvas.pack()
+        self.zoomed_canvas = Canvas(zoomed_area_frame, height=self._PSIZE, width=self._PSIZE)
+        self.zoomed_canvas.pack()
 
         # 1.4 SUV图像面板
         suv_frame = Frame(self.root)
@@ -633,6 +649,10 @@ class Labeler(object):
         logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
         logo_label.config(font=self._BIG_FONT)
         logo_label.grid(row=2, column=0, sticky=EW, pady=10)
+
+        # debug
+        if self.cfg["debug"] is True:
+            debug_mode(self)
 
         # 启动GUI
         self.root.mainloop()
