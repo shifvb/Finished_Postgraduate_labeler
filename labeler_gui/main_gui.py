@@ -388,7 +388,8 @@ class Labeler(object):
             # 最后，显示一下放大的区域
             _ctimg = Image.open(self.ct_image_list[self.image_cursor - 1])
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
-                                                self.cfg["enlarge_coefficient"], self.cfg["min_ratio_of_enlarged_image"])
+                                                self.cfg["enlarge_coefficient"],
+                                                self.cfg["min_ratio_of_enlarged_image"])
             _zoomed_coordinates = [int(_ * _ctimg.width) for _ in _zoomed_coordinates]
             _arr = np.array(_ctimg)[
                    _zoomed_coordinates[1]: _zoomed_coordinates[3],
@@ -400,7 +401,6 @@ class Labeler(object):
             # ct_image_path = self.ct_image_list[self.image_cursor - 1]
             # self.ct2_tk_img = ImageTk.PhotoImage(Image.open(ct_image_path).resize([self._PSIZE, self._PSIZE]))
             # self.zoomed_canvas.create_image(100, 0, image=self.ct2_tk_img, anchor=NW)
-
 
     def _cancel_create_label(self, event):
         """取消创建标签 callback"""
@@ -419,7 +419,11 @@ class Labeler(object):
         if args[0] == "moveto":
             _first = float(args[1])
         else:  # args[0] == "scroll"
-            _first = self.suv_scrl.get()[0] + int(args[1]) * _scrl_step
+            if abs(int(args[1])) > 1:  # 修正一个鼠标滚轮过快滚动的bug
+                _args_1 = int(args[1]) / abs(int(args[1]))
+                _first = self.suv_scrl.get()[0] + int(_args_1) * _scrl_step * 0.5
+            else:
+                _first = self.suv_scrl.get()[0] + int(args[1]) * _scrl_step * 0.5
             _first = max(0., _first)
             _first = min(1 - _len, _first)
         self.suv_scrl.set(_first, _first + _len)
