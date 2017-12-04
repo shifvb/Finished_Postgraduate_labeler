@@ -14,6 +14,7 @@ from labeler_util.label_box import LabelBox
 from labeler_util.load_patient_info import load_patient_info
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
+from labeler_util.scrollbar_delay import is_enough_time_passed
 
 
 class Labeler(object):
@@ -295,7 +296,7 @@ class Labeler(object):
             # 加载SUV值
             suv_value_path = self.suv_value_list[self.image_cursor - 1]
             self.suv_value_array = pickle.load(open(suv_value_path, 'rb'))
-            # # 加载SUV图像
+            # 加载SUV图像
             _arr = TIG.arr_to_arr(self.suv_value_array, 2.0)
             self.suv_tk_img = ImageTk.PhotoImage(
                 Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
@@ -390,6 +391,43 @@ class Labeler(object):
         self.mouse_clicked = False
         self.ct_canvas.delete(self.curr_ct_label_id)
 
+    def suv_scrl_scroll_callback(self, *args):
+        """SUV滚动条滚动回调函数"""
+        # 常量设置
+        _len = 0.3  # 滚动条的长度占到整个滚动控件的比例
+        _scrl_step = 0.5 * (1 - _len)  # 每次滚动多少， 0.5 * (1 - len)就是每次滚动50%
+        _start_suv = 1.5  # 起始SUV
+        _end_suv = 2.5  # 终止SUV
+
+        # 设置滚动条的位置
+        if args[0] == "moveto":
+            _first = float(args[1])
+        else:  # args[0] == "scroll"
+            _first = self.suv_scrl.get()[0] + int(args[1]) * _scrl_step
+            _first = max(0., _first)
+            _first = min(1 - _len, _first)
+        self.suv_scrl.set(_first, _first + _len)
+
+        # 未加载图像，就不会触发下面的函数
+        if not self.load_mode:
+            return
+        # 如果没有经过足够的时间，就不会触发下面的函数
+        if not is_enough_time_passed():
+            return
+
+        # 得到实际SUV值
+        suv_scrl_progress = (self.suv_scrl.get()[0]) / (1 - _len)
+        actual_suv = _start_suv + (_end_suv - _start_suv) * suv_scrl_progress
+
+        # 根据SUV值生成阈值图像
+        _arr = TIG.arr_to_arr(self.suv_value_array, actual_suv)
+        self.suv_tk_img = ImageTk.PhotoImage(
+            Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
+        self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
+        self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
+        # 修改当前SUV阈值的显示值
+        self.suv_frame_label.config(text="PET (SUV > %.3f)" % actual_suv)
+
     # -------- 功能性函数  end  -----------
 
     def init_gui(self):
@@ -423,7 +461,7 @@ class Labeler(object):
         pet_canvas_frame = LabelFrame(pet_frame)
         pet_canvas_frame.pack()
         self.pet_canvas = Canvas(pet_canvas_frame, height=self._PSIZE, width=self._PSIZE)
-        self.pet_canvas.bind("<Motion>", self.mouse_move_callback)  # todo
+        self.pet_canvas.bind("<Motion>", self.mouse_move_callback)
         self.pet_canvas.bind("<Button-1>", self.mouse_click_callback)
         self.pet_canvas.pack()
 
@@ -440,16 +478,24 @@ class Labeler(object):
         # 1.4 SUV图像面板
         suv_frame = Frame(self.root)
         suv_frame.grid(row=1, column=1, sticky=NW, padx=5)
-        suv_frame_label = Label(suv_frame, text="PET (SUV > 2.0)", font=self._MID_FONT)
-        suv_frame_label.pack()
+        self.suv_frame_label = Label(suv_frame, text="PET (SUV > 2.000)", font=self._MID_FONT)
+        self.suv_frame_label.pack()
         suv_canvas_frame = LabelFrame(suv_frame)
         suv_canvas_frame.pack()
         self.suv_canvas = Canvas(suv_canvas_frame, height=self._PSIZE, width=self._PSIZE)
         self.suv_canvas.pack()
+        # 滚动条显示
+        suv_scrl_frame = Frame(self.root)
+        suv_scrl_frame.grid(row=1, column=2, sticky=NS, padx=0)
+        suv_scrl_frame.rowconfigure(index=1, weight=1)
+        Label(suv_scrl_frame, text=" ", font=self._MID_FONT).grid(row=0, column=0)
+        self.suv_scrl = Scrollbar(suv_scrl_frame, orient=VERTICAL, command=self.suv_scrl_scroll_callback)
+        self.suv_scrl.set(0, 0.3)
+        self.suv_scrl.grid(row=1, column=0, sticky=NS + W)
 
         # 2. 右上角面板
         upper_right_frame = Frame(self.root)
-        upper_right_frame.grid(row=0, column=2, sticky=NW)
+        upper_right_frame.grid(row=0, column=2, sticky=NW, columnspan=2)
 
         # 2.1 显示标签面板
         self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._MID_FONT)
@@ -553,7 +599,7 @@ class Labeler(object):
 
         # 3. 右下角面板
         bottom_right_frame = Frame(self.root)
-        bottom_right_frame.grid(row=1, column=2, sticky=NW)
+        bottom_right_frame.grid(row=1, column=3, sticky=NW)
 
         # 3.1 文件加载面板
         load_dir_frame = LabelFrame(bottom_right_frame, text='加载文件', font=self._MID_FONT)
