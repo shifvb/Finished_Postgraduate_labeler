@@ -50,6 +50,7 @@ class Labeler(object):
         self._MID_FONT = Font(size=13)
         self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
         self.PET_F_TITLE = "PET({:03}/{:03}) 当前SUV值:{}, z分数:{}"
+        self.SUV_F_TITLE = "PET (SUV > %.3f)"
         # GUI_鼠标
         self.mouse_clicked = False  # 追踪鼠标是否点击，点击奇数次为True，偶数次为False
         self.current_mouse_x = 0  # 当前鼠标x
@@ -303,6 +304,13 @@ class Labeler(object):
                 Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
             self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
+            self.suv_frame_label.config(text=self.SUV_F_TITLE % 2.0)
+
+            _range = self.suv_value_array.max() - self.suv_value_array.min()
+            _first = (2 / _range) * (1 - 0.3)
+            _first = min(_first, 0.7)
+            self.suv_scrl.set(_first, _first + 0.3)
+
             # 加载PET图像
             pet_image_path = self.pet_image_list[self.image_cursor - 1]
             self.pet_tk_img = ImageTk.PhotoImage(
@@ -409,6 +417,10 @@ class Labeler(object):
 
     def suv_scrl_scroll_callback(self, *args):
         """SUV滚动条滚动回调函数"""
+        # 未加载图像，就不会触发下面的函数
+        if not self.load_mode:
+            return
+
         # 常量设置
         _len = 0.3  # 滚动条的长度占到整个滚动控件的比例
         _scrl_step = 0.5 * (1 - _len)  # 每次滚动多少， 0.5 * (1 - len)就是每次滚动50%
@@ -428,9 +440,6 @@ class Labeler(object):
             _first = min(1 - _len, _first)
         self.suv_scrl.set(_first, _first + _len)
 
-        # 未加载图像，就不会触发下面的函数
-        if not self.load_mode:
-            return
         # 如果没有经过足够的时间，就不会触发下面的函数
         if not is_enough_time_passed():
             return
