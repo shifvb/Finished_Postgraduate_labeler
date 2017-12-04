@@ -412,8 +412,8 @@ class Labeler(object):
         # 常量设置
         _len = 0.3  # 滚动条的长度占到整个滚动控件的比例
         _scrl_step = 0.5 * (1 - _len)  # 每次滚动多少， 0.5 * (1 - len)就是每次滚动50%
-        _start_suv = 1.5  # 起始SUV
-        _end_suv = 2.5  # 终止SUV
+        _start_suv = 0  # 起始SUV
+        _end_suv = self.suv_value_array.max()  # 终止SUV
 
         # 设置滚动条的位置
         if args[0] == "moveto":
