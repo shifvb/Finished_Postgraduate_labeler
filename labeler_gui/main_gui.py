@@ -283,8 +283,11 @@ class Labeler(object):
             return
         _t = self.diagnosis_text.get("1.0", END)
         save_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]), _t)
-        showinfo(title="信息",
-                 message="已保存到:{}".format(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"])))
+
+        _t = "参考信息已保存到:{}".format(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]))
+        _t = _t.replace("/", "\\")
+        self.status_label.config(text=_t)
+
 
         # -------- 功能性函数 start -----------
 
@@ -645,40 +648,44 @@ class Labeler(object):
 
         # 3. 右下角面板
         bottom_right_frame = Frame(self.root)
-        bottom_right_frame.grid(row=1, column=3, sticky=NW)
+        bottom_right_frame.grid(row=1, column=3, sticky=SE, padx=5)
 
         # 3.1 文件加载面板
         load_dir_frame = LabelFrame(bottom_right_frame, text='加载文件', font=self._MID_FONT)
-        load_dir_frame.grid(row=0, column=0, sticky=NW, ipadx=5, ipady=0)
+        load_dir_frame.grid(row=0, column=0, sticky=NW)
         load_ct_dir_btn = Button(load_dir_frame, command=self.load_ct_dir_btn_callback, width=17, text='CT文件夹路径')
         load_ct_dir_btn.config(font=self._BIG_FONT)
-        load_ct_dir_btn.grid(row=0, column=0, padx=5)
+        load_ct_dir_btn.grid(row=0, column=0)
         self.load_ct_dir_entry = Entry(load_dir_frame, width=70, font=self._BIG_FONT)
-        self.load_ct_dir_entry.grid(row=0, column=1, pady=7)
+        self.load_ct_dir_entry.grid(row=0, column=1, ipady=3)
         load_pet_dir_btn = Button(load_dir_frame, command=self.load_pet_dir_btn_callback, width=17, text="PET文件夹路径")
         load_pet_dir_btn.config(font=self._BIG_FONT)
-        load_pet_dir_btn.grid(row=1, column=0, padx=5)
+        load_pet_dir_btn.grid(row=1, column=0)
         self.load_pet_dir_entry = Entry(load_dir_frame, width=70, font=self._BIG_FONT)
-        self.load_pet_dir_entry.grid(row=1, column=1, pady=7)
+        self.load_pet_dir_entry.grid(row=1, column=1, ipady=3)
         load_dir_btn = Button(load_dir_frame, command=self.load_btn_callback, width=17, text="加载")
         load_dir_btn.config(font=self._BIG_FONT)
-        load_dir_btn.grid(row=2, column=0, padx=5, pady=3)
-        load_dir_label = Label(load_dir_frame, font=Font(size=15))
-        load_dir_label.grid(row=2, column=1, sticky=W, )
+        load_dir_btn.grid(row=2, column=0)
+        # 状态栏
+        self.status_label = Label(load_dir_frame, text="", font=self._BIG_FONT, width=72)
+        self.status_label.grid(row=2, column=1, sticky=E)
 
         # 3.2 病人诊断面板
         diagnosis_frame = LabelFrame(bottom_right_frame, text="参考", font=self._MID_FONT)
         diagnosis_frame.grid(row=1, column=0)
-        self.diagnosis_text = Text(diagnosis_frame, height=13, width=90, font=self._BIG_FONT, relief=FLAT)
-        self.diagnosis_text.grid(row=0, column=0, padx=0, pady=0)
+        self.diagnosis_text = Text(diagnosis_frame, height=14, width=90, font=self._BIG_FONT, relief=FLAT)
+        self.diagnosis_text.bind("<Key-Left>", lambda *x:print(x))
+        self.diagnosis_text.grid(row=0, column=0)
         diagnosis_save_btn = Button(diagnosis_frame, text="保存参考信息", command=self.save_remark_btn_callback)
         diagnosis_save_btn.config(height=1, font=self._BIG_FONT)
         diagnosis_save_btn.grid(row=1, column=0, sticky=EW)
 
         # 6. logo
-        logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University", fg="gray")
+        logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University")
         logo_label.config(font=self._BIG_FONT)
-        logo_label.grid(row=2, column=0, sticky=EW, pady=10)
+        logo_label.grid(row=2, column=0, sticky=EW)
+
+
 
         # debug
         if self.cfg["debug"] is True:
