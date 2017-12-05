@@ -43,14 +43,16 @@ class Labeler(object):
         self.ct_label_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
         self.pet_label_id_list = []
         self.curr_ct_label_id = -1  # 用来储存当前创建的标签框id的变量
+        self.curr_ct_suv_value_id = -1  # 用来显示当前SUV值的id的变量
         self.curr_pet_label_id = -1
+        self.curr_pet_suv_value_id = -1  # 用来显示当前SUV值的id的变量
         self.curr_zoomed_label_id = -1  # 用来存储 当前创建的 放大标签图像上的 标签框id的变量
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
-        self.CT_F_TITLE = "CT({:03}/{:03}) x: {:03} y: {:03}"
-        self.PET_F_TITLE = "PET({:03}/{:03}) 当前SUV值:{}, z分数:{}"
+        self.CT_F_TITLE = "CT ({:03} / {:03}) x: {:03} y: {:03}"
+        self.PET_F_TITLE = "PET ({:03} / {:03})"
         self.SUV_F_TITLE = "PET (SUV > %.3f)"
         # GUI_鼠标
         self.mouse_clicked = False  # 追踪鼠标是否点击，点击奇数次为True，偶数次为False
@@ -105,6 +107,15 @@ class Labeler(object):
             _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
             # 当前SUV值
             suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
+            self.ct_canvas.delete(self.curr_ct_suv_value_id)
+            self.curr_ct_suv_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 10),
+                                                                   text="SUV值: %.3f" % suv_value, anchor=NW,
+                                                                   font=self._MID_FONT, fill="yellow")
+            self.pet_canvas.delete(self.curr_pet_suv_value_id)
+            self.curr_pet_suv_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 10),
+                                                                     text="SUV值: %.3f" % suv_value, anchor=NW,
+                                                                     font=self._MID_FONT, fill="yellow")
+
             # 当前z分数
             _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
             self.pet_frame_label.config(text=self.PET_F_TITLE.format(
@@ -316,7 +327,7 @@ class Labeler(object):
                 Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
             self.pet_frame_label.config(
-                text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list), "%.3f" % 0, "%+.3f" % 0))
+                text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list)))
         # 如果存在放大标签图像，删除此图像
         self._zoomed_tk_img = None
         self.zoomed_canvas.delete(self.curr_zoomed_label_id)
@@ -487,7 +498,7 @@ class Labeler(object):
         pet_frame = Frame(self.root)
         pet_frame.grid(row=0, column=1, sticky=NW, padx=5)
         self.pet_frame_label = Label(pet_frame, font=self._MID_FONT)
-        self.pet_frame_label.config(text=self.PET_F_TITLE.format(0, 0, "%.3f" % 0, "%+.3f" % 0))
+        self.pet_frame_label.config(text=self.PET_F_TITLE.format(0, 0))
         self.pet_frame_label.pack()
         pet_canvas_frame = LabelFrame(pet_frame)
         pet_canvas_frame.pack()
@@ -607,7 +618,7 @@ class Labeler(object):
         patient_age_label.grid(row=6, column=0, sticky=W, pady=_p_pady)
         patient_tracer_label = Label(patient_info_k_frame, text="示踪剂:", font=self._BIG_FONT)
         patient_tracer_label.grid(row=7, column=0, sticky=W, pady=_p_pady)
-        patient_tracer_activity_label = Label(patient_info_k_frame, text="示踪剂剂量:", font = self._BIG_FONT)
+        patient_tracer_activity_label = Label(patient_info_k_frame, text="示踪剂剂量:", font=self._BIG_FONT)
         patient_tracer_activity_label.grid(row=8, column=0, sticky=W, pady=_p_pady)
         Label(patient_info_frame, width=380, font=Font(size=1)).grid(row=1, column=0, columnspan=2, sticky=W)
         self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
