@@ -419,6 +419,7 @@ class Labeler(object):
         """取消创建标签 callback"""
         self.mouse_clicked = False
         self.ct_canvas.delete(self.curr_ct_label_id)
+        self.pet_canvas.delete(self.curr_pet_label_id)
 
     def suv_scrl_scroll_callback(self, *args):
         """SUV滚动条滚动回调函数"""
