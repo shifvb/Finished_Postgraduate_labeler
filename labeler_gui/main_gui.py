@@ -38,12 +38,14 @@ class Labeler(object):
         # GUI相关变量
         self.root = Tk()  # 初始化主窗口
         self.ct_tk_img = None  # 创建标签面板的图像
+        self._zoomed_tk_img = None  # 放大标签面板图像
         self._color = None  # 用来储存某些组件当前所用颜色的变量
         self.label_list = []  # 用来存储当前标签的list
         self.ct_label_id_list = []  # 用来存储当前标签在标签创建面板上的id的list，和self.label_list一一对应
         self.pet_label_id_list = []
         self.curr_ct_label_id = -1  # 用来储存当前创建的标签框id的变量
         self.curr_pet_label_id = -1
+        self.curr_zoomed_label_id = -1  # 用来存储 当前创建的 放大标签图像上的 标签框id的变量
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
@@ -123,7 +125,6 @@ class Labeler(object):
         self.current_mouse_y = event.y
 
     # -------- 创建图像标签 面板 callback end ----------
-
 
     # -------- 标签增删 面板 callback start ----------
     def del_label_btn_callback(self):
@@ -317,6 +318,9 @@ class Labeler(object):
             self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
             self.pet_frame_label.config(
                 text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list), "%.3f" % 0, "%+.3f" % 0))
+        # 如果存在放大标签图像，删除此图像
+        self._zoomed_tk_img = None
+        self.zoomed_canvas.delete(self.curr_zoomed_label_id)
 
     def _load_labels(self):
         # 清除已有标签
@@ -405,9 +409,12 @@ class Labeler(object):
             self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
             self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
             # 在放大的区域上显示标签框
-            self.zoomed_canvas.create_rectangle(_zoomed_coordinates[4], _zoomed_coordinates[5],
-                                                _zoomed_coordinates[6], _zoomed_coordinates[7],
-                                                width=2, outline=self._color)
+            self.zoomed_canvas.delete(self.curr_zoomed_label_id)
+            self.curr_zoomed_label_id = self.zoomed_canvas.create_rectangle(_zoomed_coordinates[4],
+                                                                            _zoomed_coordinates[5],
+                                                                            _zoomed_coordinates[6],
+                                                                            _zoomed_coordinates[7],
+                                                                            width=2, outline=self._color)
 
     def _cancel_create_label(self, event):
         """取消创建标签 callback"""
