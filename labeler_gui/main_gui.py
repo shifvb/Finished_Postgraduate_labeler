@@ -15,7 +15,6 @@ from labeler_util.label_box import LabelBox
 from labeler_util.load_patient_info import load_patient_info
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
-from labeler_util.scrollbar_delay import is_enough_time_passed
 from labeler_util.get_enlarged_area import enlarged_area
 from labeler_util.debug_mode import debug_mode
 
@@ -423,8 +422,7 @@ class Labeler(object):
 
     def suv_scrl_scroll_callback(self, *args):
         """SUV滚动条滚动回调函数"""
-        # 未加载图像，就不会触发下面的函数
-        if not self.load_mode:
+        if not self.load_mode:  # 未加载图像，就不会触发下面的函数
             return
 
         # 常量设置
@@ -445,10 +443,6 @@ class Labeler(object):
             _first = max(0., _first)
             _first = min(1 - _len, _first)
         self.suv_scrl.set(_first, _first + _len)
-
-        # 如果没有经过足够的时间，就不会触发下面的函数
-        if not is_enough_time_passed():
-            return
 
         # 得到实际SUV值
         suv_scrl_progress = (self.suv_scrl.get()[0]) / (1 - _len)
