@@ -22,10 +22,10 @@ def enlarged_area(p_x1: float, p_y1: float, p_x2: float, p_y2: float,
     _x2 = min(1., (p_x1 + p_x2 + _r) / 2)
     _y2 = min(1., (p_y1 + p_y2 + _r) / 2)
     # 计算一下原来的坐标在新的放大区域的位置（正则化到0~1之间）
-    ori_x1 = (p_x1 - _x1) / (_x2 - _x1)
-    ori_y1 = (p_y1 - _y1) / (_y2 - _y1)
-    ori_x2 = (p_x2 - _x1) / (_x2 - _x1)
-    ori_y2 = (p_y2 - _y1) / (_y2 - _y1)
+    ori_x1 = (p_x1 - _x1) / (_x2 - _x1) - 0.03  # 减去一个常数的原因是因为图片采样的时候有一些偏差，算是亡羊补牢
+    ori_y1 = (p_y1 - _y1) / (_y2 - _y1) - 0.02
+    ori_x2 = (p_x2 - _x1) / (_x2 - _x1) - 0.03
+    ori_y2 = (p_y2 - _y1) / (_y2 - _y1) - 0.02
     # 返回值
     return _x1, _y1, _x2, _y2, ori_x1, ori_y1, ori_x2, ori_y2
 
