@@ -364,6 +364,7 @@ class Labeler(object):
         self.patient_weight_value.config(text=self.patient_info["patient_weight"])
         self.patient_height_value.config(text=self.patient_info["patient_height"])
         self.patient_tracer_value.config(text=self.patient_info["pet_tracer_name"])
+        self.patient_tracer_activity_value.config(text=self.patient_info["patient_tracer_activity"])
 
     def _load_patient_remark(self):
         """加载病人诊断信息"""
@@ -591,7 +592,7 @@ class Labeler(object):
         patient_info_k_frame.grid(row=0, column=0, sticky=W)
         patient_info_v_frame = Frame(patient_info_frame)
         patient_info_v_frame.grid(row=0, column=1)
-        _p_pady = 16
+        _p_pady = 0
         patient_id_label = Label(patient_info_k_frame, text="ID:", font=self._BIG_FONT)
         patient_id_label.grid(row=0, column=0, sticky=W, pady=_p_pady)
         patient_height_label = Label(patient_info_k_frame, text="身高:", font=self._BIG_FONT)
@@ -605,8 +606,10 @@ class Labeler(object):
         patient_age_label = Label(patient_info_k_frame, text="年龄:", font=self._BIG_FONT)
         patient_age_label.grid(row=6, column=0, sticky=W, pady=_p_pady)
         patient_tracer_label = Label(patient_info_k_frame, text="示踪剂:", font=self._BIG_FONT)
-        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=13)
-        Label(patient_info_frame, width=36, font=self._BIG_FONT).grid(row=1, column=0, columnspan=2, sticky=W)
+        patient_tracer_label.grid(row=7, column=0, sticky=W, pady=_p_pady)
+        patient_tracer_activity_label = Label(patient_info_k_frame, text="示踪剂剂量:", font = self._BIG_FONT)
+        patient_tracer_activity_label.grid(row=8, column=0, sticky=W, pady=_p_pady)
+        Label(patient_info_frame, width=380, font=Font(size=1)).grid(row=1, column=0, columnspan=2, sticky=W)
         self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_id_value.grid(row=0, column=0, sticky=E, pady=_p_pady)
         self.patient_height_value = Label(patient_info_v_frame, font=self._BIG_FONT)
@@ -620,7 +623,9 @@ class Labeler(object):
         self.patient_age_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_age_value.grid(row=6, column=0, sticky=E, pady=_p_pady)
         self.patient_tracer_value = Label(patient_info_v_frame, font=self._BIG_FONT)
-        self.patient_tracer_value.grid(row=7, column=0, sticky=E, pady=11)
+        self.patient_tracer_value.grid(row=7, column=0, sticky=E, pady=_p_pady)
+        self.patient_tracer_activity_value = Label(patient_info_v_frame, font=self._BIG_FONT)
+        self.patient_tracer_activity_value.grid(row=8, column=0, sticky=E, pady=_p_pady)
         if self.cfg["show_patient_name"] is True:
             patient_name_label = Label(patient_info_k_frame, text="姓名:", font=self._BIG_FONT)
             patient_name_label.grid(row=1, column=0, sticky=W, pady=_p_pady)
