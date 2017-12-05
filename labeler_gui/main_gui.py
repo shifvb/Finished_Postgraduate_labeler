@@ -305,12 +305,11 @@ class Labeler(object):
             self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
             self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
             self.suv_frame_label.config(text=self.SUV_F_TITLE % 2.0)
-
+            # 设置SUV滚动条
             _range = self.suv_value_array.max() - self.suv_value_array.min()
             _first = (2 / _range) * (1 - 0.3)
             _first = min(_first, 0.7)
             self.suv_scrl.set(_first, _first + 0.3)
-
             # 加载PET图像
             pet_image_path = self.pet_image_list[self.image_cursor - 1]
             self.pet_tk_img = ImageTk.PhotoImage(
