@@ -90,10 +90,10 @@ class Labeler(object):
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
-            # self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
-            # self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
-            # self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
-            # self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+            self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
+            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
+            self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
+            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
             # PET图像指示线
             self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
             self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
@@ -404,10 +404,10 @@ class Labeler(object):
             _img = Image.fromarray(_arr, 'L')
             self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
             self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
-
-            # ct_image_path = self.ct_image_list[self.image_cursor - 1]
-            # self.ct2_tk_img = ImageTk.PhotoImage(Image.open(ct_image_path).resize([self._PSIZE, self._PSIZE]))
-            # self.zoomed_canvas.create_image(100, 0, image=self.ct2_tk_img, anchor=NW)
+            # 在放大的区域上显示标签框
+            self.zoomed_canvas.create_rectangle(_zoomed_coordinates[4], _zoomed_coordinates[5],
+                                                _zoomed_coordinates[6], _zoomed_coordinates[7],
+                                                width=2, outline=self._color)
 
     def _cancel_create_label(self, event):
         """取消创建标签 callback"""
