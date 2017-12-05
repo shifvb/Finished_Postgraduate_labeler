@@ -17,6 +17,7 @@ from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
 from labeler_util.get_enlarged_area import enlarged_area
 from labeler_util.debug_mode import debug_mode
+from labeler_util.stripped_text import stripped_text
 
 
 class Labeler(object):
@@ -109,11 +110,11 @@ class Labeler(object):
             suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
             self.ct_canvas.delete(self.curr_ct_suv_value_id)
             self.curr_ct_suv_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 10),
-                                                                   text="SUV值: %.3f" % suv_value, anchor=NW,
+                                                                   text="SUV: %.3f" % suv_value, anchor=NW,
                                                                    font=self._MID_FONT, fill="yellow")
             self.pet_canvas.delete(self.curr_pet_suv_value_id)
             self.curr_pet_suv_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 10),
-                                                                     text="SUV值: %.3f" % suv_value, anchor=NW,
+                                                                     text="SUV: %.3f" % suv_value, anchor=NW,
                                                                      font=self._MID_FONT, fill="yellow")
 
             # 当前z分数
@@ -270,8 +271,7 @@ class Labeler(object):
 
     def save_label_btn_callback(self, *args):
         """navigation面板 保存当前图片标签按钮 callback"""
-        # 没有加载图像此按钮无效
-        if not self.load_mode:
+        if not self.load_mode:  # 没有加载图像此按钮无效
             return
         self._save_label()
 
@@ -288,7 +288,6 @@ class Labeler(object):
         _t = _t.replace("/", "\\")
         self.status_label.config(text=_t)
 
-
         # -------- 功能性函数 start -----------
 
     def _save_label(self):
@@ -300,6 +299,12 @@ class Labeler(object):
             for label in self.label_list:
                 _temp_result = label.to_yolo(self.ct_tk_img.width(), self.ct_tk_img.height())
                 f.write("{} {:.7f} {:.7f} {:.7f} {:.7f}\n".format(*_temp_result))
+        # 显示状态
+        _t = "标签信息已保存到 "
+        _t += stripped_text(os.path.split(self.label_file_path)[0], 44)
+        _t = _t.replace("/", "\\")
+        _t += os.path.split(self.label_file_path)[1]
+        self.status_label.config(text=_t)
 
     def _load_image(self):
         # 加载CT图像
@@ -674,7 +679,7 @@ class Labeler(object):
         diagnosis_frame = LabelFrame(bottom_right_frame, text="参考", font=self._MID_FONT)
         diagnosis_frame.grid(row=1, column=0)
         self.diagnosis_text = Text(diagnosis_frame, height=14, width=90, font=self._BIG_FONT, relief=FLAT)
-        self.diagnosis_text.bind("<Key-Left>", lambda *x:print(x))
+        self.diagnosis_text.bind("<Key-Left>", lambda *x: print(x))
         self.diagnosis_text.grid(row=0, column=0)
         diagnosis_save_btn = Button(diagnosis_frame, text="保存参考信息", command=self.save_remark_btn_callback)
         diagnosis_save_btn.config(height=1, font=self._BIG_FONT)
@@ -684,8 +689,6 @@ class Labeler(object):
         logo_label = Label(bottom_right_frame, text="Huiyan Jiang Lab. in Northeastern University")
         logo_label.config(font=self._BIG_FONT)
         logo_label.grid(row=2, column=0, sticky=EW)
-
-
 
         # debug
         if self.cfg["debug"] is True:
