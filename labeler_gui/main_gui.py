@@ -503,7 +503,7 @@ class Labeler(object):
         # 1.3 显示放大区域的面板
         zoomed_frame = Frame(self.root)
         zoomed_frame.grid(row=1, column=0, sticky=NW, padx=5)
-        zoomed_frame_label = Label(zoomed_frame, text="标签放大", font=self._MID_FONT)
+        zoomed_frame_label = Label(zoomed_frame, text="局部放大区域", font=self._MID_FONT)
         zoomed_frame_label.pack()
         zoomed_area_frame = LabelFrame(zoomed_frame)
         zoomed_area_frame.pack()
