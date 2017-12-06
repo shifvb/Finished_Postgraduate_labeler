@@ -35,4 +35,3 @@ class ImageProcessor(object):
         :return: Hu值数组
         """
         return arr * slope + intercept
-

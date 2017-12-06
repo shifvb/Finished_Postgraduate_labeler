@@ -113,7 +113,7 @@ class Labeler(object):
         # 当前SUV值
         _x = min(int(event.x / self._PSIZE * self.suv_value_array.shape[0]), self.suv_value_array.shape[0] - 1)
         _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
-        suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
+        suv_value = self.suv_value_array.transpose()[_x][_y]  # 注意！此处需要转秩！
         self.ct_canvas.delete(self.curr_ct_suv_value_id)
         self.curr_ct_suv_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 10), anchor=NW, fill="yellow",
                                                                text="SUV: %.3f" % suv_value, font=self._MID_FONT)
@@ -123,7 +123,7 @@ class Labeler(object):
         # 当前Hu值
         _x = min(int(event.x / self._PSIZE * self.ct_hu_array.shape[0]), self.ct_hu_array.shape[0] - 1)
         _y = min(int(event.y / self._PSIZE * self.ct_hu_array.shape[1]), self.ct_hu_array.shape[1] - 1)
-        hu_value = self.ct_hu_array[_x][_y]
+        hu_value = self.ct_hu_array.transpose()[_x][_y]  # 注意！此处需要转秩！
         self.ct_canvas.delete(self.curr_ct_hu_value_id)
         self.curr_ct_hu_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 30), anchor=NW, fill="yellow",
                                                               text="Hu : {:>5}".format(hu_value), font=self._MID_FONT)
@@ -348,6 +348,7 @@ class Labeler(object):
         self.pet_tk_img = ImageTk.PhotoImage(_pet_img)
         self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
         self.pet_frame_label.config(text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_value_list)))
+
         # 如果存在放大标签图像，删除此图像
         self._zoomed_tk_img = None
         self.zoomed_canvas.delete(self.curr_zoomed_label_id)
@@ -425,14 +426,14 @@ class Labeler(object):
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
             # 最后，显示一下放大的区域
-            _ctimg = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array))
+            _ctimg = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array.transpose()))  # 注意！需要转秩！
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
             _zoomed_coordinates = [int(_ * _ctimg.width) for _ in _zoomed_coordinates]
             _arr = np.array(_ctimg)[
-                   _zoomed_coordinates[1]: _zoomed_coordinates[3],
-                   _zoomed_coordinates[0]: _zoomed_coordinates[2]]
+                   _zoomed_coordinates[0]: _zoomed_coordinates[2],
+                   _zoomed_coordinates[1]: _zoomed_coordinates[3]]
             _img = Image.fromarray(_arr, 'L')
             self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
             self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
