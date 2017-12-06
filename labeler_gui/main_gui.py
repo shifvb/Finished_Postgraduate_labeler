@@ -35,7 +35,8 @@ class Labeler(object):
         self.ct_value_list = list()  # 加载CT值文件的文件名列表（绝对路径）
         self.ct_value_array = None
         self.ct_hu_array = None
-        self.pet_image_list = list()  # 加载PET图像的文件名列表（绝对路径）
+        self.pet_value_list = list()  # 加载PET值文件的文件名列表(绝对路径)
+        self.pet_value_array = None
         self.suv_value_list = list()  # 加载SUV值文件的文件名列表(绝对路径)
         self.suv_value_array = None
         self.patient_info = dict()
@@ -219,11 +220,10 @@ class Labeler(object):
             return
 
         # 加载图像文件
-        self.image_loader.load_image(self.cfg["image_output_suffix"], self.ct_workspace,
-                                     self.cfg['ct_output_folder_name'], self.pet_workspace,
+        self.image_loader.load_image(self.ct_workspace, self.cfg['ct_output_folder_name'], self.pet_workspace,
                                      self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'])
         self.ct_value_list = self.image_loader.cts
-        self.pet_image_list = self.image_loader.pets
+        self.pet_value_list = self.image_loader.pets
         self.suv_value_list = self.image_loader.suvs
         # 加载病人信息
         self.patient_info_loader.load_patient_info(self.ct_workspace, self.pet_workspace)
@@ -318,20 +318,17 @@ class Labeler(object):
         self.status_label.config(text=_t)
 
     def _load_image(self):
-        # 加载CT值
-        ct_value_path = self.ct_value_list[self.image_cursor - 1]
-        self.ct_value_array = pickle.load(open(ct_value_path, 'rb'))
+        # 加载CT图像
+        self.ct_value_array = pickle.load(open(self.ct_value_list[self.image_cursor - 1], 'rb'))
         self.ct_hu_array = self.img_prcsr.cal_Hu(self.ct_value_array, self.patient_info["rescale_slope"],
                                                  self.patient_info["rescale_intercept"])
-        # 加载CT图像
         _ct_img = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array)).resize([self._PSIZE, self._PSIZE])
         self.ct_tk_img = ImageTk.PhotoImage(_ct_img)
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
         self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), 0, 0))
-        # 加载SUV值
-        suv_value_path = self.suv_value_list[self.image_cursor - 1]
-        self.suv_value_array = pickle.load(open(suv_value_path, 'rb'))
+
         # 加载SUV图像
+        self.suv_value_array = pickle.load(open(self.suv_value_list[self.image_cursor - 1], 'rb'))
         _arr = self.img_prcsr.threshold_image(self.suv_value_array, 2.0)
         self.suv_tk_img = ImageTk.PhotoImage(
             Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
@@ -343,12 +340,14 @@ class Labeler(object):
         _first = (2 / _range) * (1 - 0.3)
         _first = min(_first, 0.7)
         self.suv_scrl.set(_first, _first + 0.3)
+
         # 加载PET图像
-        pet_image_path = self.pet_image_list[self.image_cursor - 1]
-        self.pet_tk_img = ImageTk.PhotoImage(
-            Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
+        self.pet_value_array = pickle.load(open(self.pet_value_list[self.image_cursor - 1], 'rb'))
+        _pet_img = Image.fromarray(self.img_prcsr.norm_image(self.pet_value_array)). \
+            resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR)
+        self.pet_tk_img = ImageTk.PhotoImage(_pet_img)
         self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
-        self.pet_frame_label.config(text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list)))
+        self.pet_frame_label.config(text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_value_list)))
         # 如果存在放大标签图像，删除此图像
         self._zoomed_tk_img = None
         self.zoomed_canvas.delete(self.curr_zoomed_label_id)
