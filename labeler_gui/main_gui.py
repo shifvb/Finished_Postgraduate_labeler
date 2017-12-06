@@ -12,7 +12,7 @@ from labeler_gui.MyCanvas import MyCanvas
 from labeler_util.ImageLoader import ImageLoader
 from labeler_util.gen_colors import gen_colors
 from labeler_util.label_box import LabelBox
-from labeler_util.load_patient_info import load_patient_info
+from labeler_util.PatientInfoLoader import PatientInfoLoader
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ImageProcessor import ImageProcessor
 from labeler_util.get_enlarged_area import enlarged_area
@@ -27,15 +27,18 @@ class Labeler(object):
         self.color_generator = gen_colors()  # 初始化颜色生成器，用来生成不同的颜色
         self.image_loader = ImageLoader()  # 初始化ImageLoader
         self.img_prcsr = ImageProcessor()  # 初始化ImageProcessor
+        self.patient_info_loader = PatientInfoLoader()  # 初始化PatientInfoLoader
         # 文件相关变量
         self.load_mode = str()  # 目前有 CT, PET_CT 两种         # todo: delete load mode
         self.ct_workspace = str()  # CT workspace
         self.pet_workspace = str()  # PET workspace
         self.ct_value_list = list()  # 加载CT值文件的文件名列表（绝对路径）
         self.ct_value_array = None
+        self.ct_hu_array = None
         self.pet_image_list = list()  # 加载PET图像的文件名列表（绝对路径）
         self.suv_value_list = list()  # 加载SUV值文件的文件名列表(绝对路径)
         self.suv_value_array = None
+        self.patient_info = dict()
         self.image_cursor = -1  # 当前UI中显示的图片为第几张，取值时self.ct_image_list[self.image_cursor-1]
         self.label_file_path = None  # 用来保存当前图片对应label的绝对路径
         # GUI相关变量
@@ -222,6 +225,9 @@ class Labeler(object):
         self.ct_value_list = self.image_loader.cts
         self.pet_image_list = self.image_loader.pets
         self.suv_value_list = self.image_loader.suvs
+        # 加载病人信息
+        self.patient_info_loader.load_patient_info(self.ct_workspace, self.pet_workspace)
+        self.patient_info = self.patient_info_loader.patient_info
 
         # default to the 1st image in the collection
         self.image_cursor = 1
@@ -313,6 +319,8 @@ class Labeler(object):
         # 加载CT值
         ct_value_path = self.ct_value_list[self.image_cursor - 1]
         self.ct_value_array = pickle.load(open(ct_value_path, 'rb'))
+        self.ct_hu_array = self.img_prcsr.cal_Hu(self.ct_value_array, self.patient_info["rescale_slope"],
+                                                 self.patient_info["rescale_intercept"])
         # 加载CT图像
         _ct_img = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array)).resize([self._PSIZE, self._PSIZE])
         self.ct_tk_img = ImageTk.PhotoImage(_ct_img)
@@ -377,9 +385,6 @@ class Labeler(object):
                     self.label_listbox.itemconfig(len(self.label_list) - 1, fg=self._color)
 
     def _load_patient_info(self):
-        if self.load_mode == 'CT':
-            return
-        self.patient_info = load_patient_info(self.ct_workspace, self.pet_workspace)
         self.patient_id_value.config(text=self.patient_info["patient_id"])
         if self.cfg["show_patient_name"] is True:
             self.patient_name_value.config(text=self.patient_info["patient_name"])
