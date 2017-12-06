@@ -545,31 +545,35 @@ class Labeler(object):
 
         # 2. 右上角面板
         upper_right_frame = Frame(self.root)
-        upper_right_frame.grid(row=0, column=2, sticky=NW, columnspan=2)
+        upper_right_frame.grid(row=0, column=3, sticky=W, padx=5)
 
         # 2.1 显示标签面板
         self.bbox_frame = LabelFrame(upper_right_frame, text='标签', font=self._MID_FONT)
-        self.bbox_frame.grid(row=0, column=0, sticky=NW)
-        self.label_listbox = Listbox(self.bbox_frame, width=33, height=17, font=self._MID_FONT, relief=FLAT)
+        self.bbox_frame.grid(row=0, column=0)
+        self.label_listbox = Listbox(self.bbox_frame, width=33, height=20, font=self._MID_FONT, relief=FLAT)
         self.label_listbox.grid(row=0, column=0)
         bbox_listbox_scroll_bar = Scrollbar(self.bbox_frame)
         bbox_listbox_scroll_bar.grid(row=0, column=1, sticky=NSEW)
         bbox_listbox_scroll_bar['command'] = self.label_listbox.yview
         self.label_listbox['yscrollcommand'] = bbox_listbox_scroll_bar.set
-        del_bbox_btn = Button(self.bbox_frame, command=self.del_label_btn_callback, text='删除选定标签')
+        _frame = Frame(self.bbox_frame)
+        _frame.grid(row=1, column=0, sticky=NSEW)
+        _frame.columnconfigure(index=1, weight=1)
+        _frame.columnconfigure(index=0, weight=1)
+        del_bbox_btn = Button(_frame, command=self.del_label_btn_callback, text='删除选定标签')
         del_bbox_btn.config(font=self._BIG_FONT)
-        del_bbox_btn.grid(row=1, column=0, columnspan=2, sticky=NSEW, pady=1)
-        clear_bbox_btn = Button(self.bbox_frame, command=self.clear_label_callback, text='清除所有标签')
+        del_bbox_btn.grid(row=0, column=0, sticky=EW)
+        clear_bbox_btn = Button(_frame, command=self.clear_label_callback, text='清除所有标签')
         clear_bbox_btn.config(font=self._BIG_FONT)
-        clear_bbox_btn.grid(row=2, column=0, columnspan=2, sticky=NSEW)
+        clear_bbox_btn.grid(row=0, column=1, sticky=EW)
 
         # 2.2 选择标签类的按钮
         init_class_select_panel(self)
         label_scroll_frame = Frame(self.bbox_frame)
-        label_scroll_frame.grid(row=0, column=2, rowspan=2)
+        label_scroll_frame.grid(row=0, column=2, sticky=NW)
         label_ctrl_scrollbar = Scrollbar(label_scroll_frame)
         label_ctrl_scrollbar.grid(row=0, column=3, sticky=NS)
-        label_control_canvas = MyCanvas(label_scroll_frame, width=190, height=350)
+        label_control_canvas = MyCanvas(label_scroll_frame, width=190, height=360)
         label_control_canvas.grid(row=0, column=2, sticky=NSEW)
         for i in range(self.cfg["label_number"]):
             _btn = Button(label_scroll_frame, text="class{}".format(i), height=2, width=18, font=self._BIG_FONT,
@@ -584,10 +588,10 @@ class Labeler(object):
         label_ctrl_scrollbar.config(command=label_control_canvas.yview)
         # 2.3 显示当前标签类
         label_display_frame = Frame(self.bbox_frame)
-        label_display_frame.grid(row=2, column=2, sticky=S)
+        label_display_frame.grid(row=1, column=2, pady=5)
         current_class_label = Label(label_display_frame, text='当前标签类:', font=self._BIG_FONT)
         current_class_label.grid(row=0, column=0)
-        self.current_class_number = IntVar(value=0)
+        self.current_class_number = IntVar()
         Label(label_display_frame, textvariable=self.current_class_number, font=self._BIG_FONT).grid(row=0, column=1)
 
         # 2.4 图片导航面板
@@ -595,14 +599,14 @@ class Labeler(object):
         navi_frame.grid(row=1, column=0, sticky=NW)
         prev_img_btn = Button(navi_frame, width=13, height=2, command=self.prev_image_btn_callback, text='前一张(←)')
         prev_img_btn.config(font=self._BIG_FONT)
-        prev_img_btn.pack(side=LEFT, padx=6, pady=9)
+        prev_img_btn.pack(side=LEFT, padx=6)
         save_label_btn = Button(navi_frame, width=20, height=2, command=self.save_label_btn_callback,
                                 text='保存标签(Ctrl+S)')
         save_label_btn.config(font=self._BIG_FONT)
-        save_label_btn.pack(side=LEFT, padx=7, pady=3)
+        save_label_btn.pack(side=LEFT, padx=7, pady=5)
         next_img_btn = Button(navi_frame, width=13, height=2, command=self.next_image_btn_callback, text='后一张(→)')
         next_img_btn.config(font=self._BIG_FONT)
-        next_img_btn.pack(side=LEFT, padx=7, pady=9)
+        next_img_btn.pack(side=LEFT, padx=7)
 
         # 2.5 病人信息面板
         patient_info_frame = LabelFrame(upper_right_frame, text="基本信息", font=self._MID_FONT)
@@ -628,7 +632,7 @@ class Labeler(object):
         patient_tracer_label.grid(row=7, column=0, sticky=W, pady=_p_pady)
         patient_tracer_activity_label = Label(patient_info_k_frame, text="示踪剂剂量:", font=self._BIG_FONT)
         patient_tracer_activity_label.grid(row=8, column=0, sticky=W, pady=_p_pady)
-        Label(patient_info_frame, width=380, font=Font(size=1)).grid(row=1, column=0, columnspan=2, sticky=W)
+        Label(patient_info_frame, width=360, font=Font(size=1)).grid(row=1, column=0, columnspan=2, sticky=W)
         self.patient_id_value = Label(patient_info_v_frame, font=self._BIG_FONT)
         self.patient_id_value.grid(row=0, column=0, sticky=E, pady=_p_pady)
         self.patient_height_value = Label(patient_info_v_frame, font=self._BIG_FONT)
@@ -653,7 +657,7 @@ class Labeler(object):
 
         # 3. 右下角面板
         bottom_right_frame = Frame(self.root)
-        bottom_right_frame.grid(row=1, column=3, sticky=SE, padx=5)
+        bottom_right_frame.grid(row=1, column=3, sticky=SW, padx=5)
 
         # 3.1 文件加载面板
         load_dir_frame = LabelFrame(bottom_right_frame, text='加载文件', font=self._MID_FONT)
