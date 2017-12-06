@@ -29,7 +29,7 @@ class Labeler(object):
         self.img_prcsr = ImageProcessor()  # 初始化ImageProcessor
         self.patient_info_loader = PatientInfoLoader()  # 初始化PatientInfoLoader
         # 文件相关变量
-        self.load_mode = str()  # 目前有 CT, PET_CT 两种         # todo: delete load mode
+        self.is_loaded = False
         self.ct_workspace = str()  # CT workspace
         self.pet_workspace = str()  # PET workspace
         self.ct_value_list = list()  # 加载CT值文件的文件名列表（绝对路径）
@@ -75,8 +75,7 @@ class Labeler(object):
     # -------- 创建图像标签 面板 callback start ----------
     def mouse_click_callback(self, event):
         """创建标签面板鼠标按下回调函数"""
-        # 没有加载图像不处理
-        if not self.load_mode:
+        if not self.is_loaded:  # 没有加载图像不处理
             return
         if self.current_mouse_x > self._PSIZE or self.current_mouse_y > self._PSIZE:
             return
@@ -88,7 +87,7 @@ class Labeler(object):
 
     def mouse_move_callback(self, event):
         # 没有加载图像不处理鼠标移动
-        if not self.load_mode:
+        if not self.is_loaded:
             return
 
         # CT图像指示线
@@ -154,8 +153,7 @@ class Labeler(object):
     # -------- 标签增删 面板 callback start ----------
     def del_label_btn_callback(self):
         """删除标签 callback"""
-        # 没有加载图像此按钮无效
-        if not self.load_mode:
+        if not self.is_loaded:  # 没有加载图像此按钮无效
             return
         # 如果没有选定删除标签，那么直接结束
         if not self.label_listbox.curselection():
@@ -174,8 +172,7 @@ class Labeler(object):
 
     def clear_label_callback(self):
         """bboxControl 面板 清除所有标签 callback"""
-        # 没有加载图像此按钮无效
-        if not self.load_mode:
+        if not self.is_loaded:  # 没有加载图像此按钮无效
             return
         # 根据bbox_id_list，将主面板上的所有方框清除
         for bbox_id in self.ct_label_id_list:
@@ -213,22 +210,17 @@ class Labeler(object):
         self.ct_workspace = self.load_ct_dir_entry.get()  # 用户选定的dicom图像文件夹就是workspace
         self.pet_workspace = self.load_pet_dir_entry.get()
 
-        # 根据用户输入确定加载模式
-        self.load_mode = "CT" if self.pet_workspace == "" else "PET_CT"
-
         # 检测文件夹路径是否存在
         if not os.path.isdir(self.ct_workspace):
             showerror(title="错误", message="未找到文件夹:\n{}".format(self.ct_workspace))
             return
-        if self.load_mode == "PET_CT" and not os.path.isdir(self.pet_workspace):
+        if not os.path.isdir(self.pet_workspace):
             showerror(title="错误", message="未找到文件夹:\n{}".format(self.pet_workspace))
             return
 
         # 加载图像文件
-        self.image_loader.load_image(self.cfg["image_output_suffix"],
-                                     self.ct_workspace,
-                                     self.cfg['ct_output_folder_name'],
-                                     self.pet_workspace,
+        self.image_loader.load_image(self.cfg["image_output_suffix"], self.ct_workspace,
+                                     self.cfg['ct_output_folder_name'], self.pet_workspace,
                                      self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'])
         self.ct_value_list = self.image_loader.cts
         self.pet_image_list = self.image_loader.pets
@@ -245,11 +237,14 @@ class Labeler(object):
             showerror(title="错误", message="未找到图像！")
             return
 
-        # GUI加载
+        # 加载GUI
         self._load_image()
         self._load_labels()
         self._load_patient_info()
         self._load_patient_remark()
+
+        # 加载完毕
+        self.is_loaded = True
 
     # -------- load 面板 callback end ----------
 
@@ -257,7 +252,7 @@ class Labeler(object):
     def prev_image_btn_callback(self, event=None):
         """navigation面板 上一张图片按钮 callback"""
         # 没有加载图像此按钮无效
-        if not self.load_mode:
+        if not self.is_loaded:
             return
         # 如果没有上一张图像，报错
         if self.image_cursor == 1:
@@ -272,8 +267,7 @@ class Labeler(object):
 
     def next_image_btn_callback(self, event=None):
         """navigation面板  下一张图片按钮 callback"""
-        # 没有加载图像此按钮无效
-        if not self.load_mode:
+        if not self.is_loaded:  # 没有加载图像此按钮无效
             return
         # 如果没有下一张图像，报错
         if self.image_cursor == len(self.ct_value_list):
@@ -288,7 +282,7 @@ class Labeler(object):
 
     def save_label_btn_callback(self, *args):
         """navigation面板 保存当前图片标签按钮 callback"""
-        if not self.load_mode:  # 没有加载图像此按钮无效
+        if not self.is_loaded:  # 没有加载图像此按钮无效
             return
         self._save_label()
 
@@ -296,7 +290,7 @@ class Labeler(object):
 
     def save_remark_btn_callback(self):
         """保存病人诊断信息"""
-        if not self.load_mode:  # 没有加载图像此按钮无效
+        if not self.is_loaded:  # 没有加载图像此按钮无效
             return
         _t = self.diagnosis_text.get("1.0", END)
         save_patient_remark(os.path.join(self.ct_workspace, self.cfg["patient_remark_name"]), _t)
@@ -334,30 +328,27 @@ class Labeler(object):
         self.ct_tk_img = ImageTk.PhotoImage(_ct_img)
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
         self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), 0, 0))
-        # 如果是PET_CT模式
-        if self.load_mode == 'PET_CT':
-            # 加载SUV值
-            suv_value_path = self.suv_value_list[self.image_cursor - 1]
-            self.suv_value_array = pickle.load(open(suv_value_path, 'rb'))
-            # 加载SUV图像
-            _arr = self.img_prcsr.threshold_image(self.suv_value_array, 2.0)
-            self.suv_tk_img = ImageTk.PhotoImage(
-                Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
-            self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
-            self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
-            self.suv_frame_label.config(text=self.SUV_F_TITLE % 2.0)
-            # 设置SUV滚动条
-            _range = self.suv_value_array.max() - self.suv_value_array.min()
-            _first = (2 / _range) * (1 - 0.3)
-            _first = min(_first, 0.7)
-            self.suv_scrl.set(_first, _first + 0.3)
-            # 加载PET图像
-            pet_image_path = self.pet_image_list[self.image_cursor - 1]
-            self.pet_tk_img = ImageTk.PhotoImage(
-                Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
-            self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
-            self.pet_frame_label.config(
-                text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list)))
+        # 加载SUV值
+        suv_value_path = self.suv_value_list[self.image_cursor - 1]
+        self.suv_value_array = pickle.load(open(suv_value_path, 'rb'))
+        # 加载SUV图像
+        _arr = self.img_prcsr.threshold_image(self.suv_value_array, 2.0)
+        self.suv_tk_img = ImageTk.PhotoImage(
+            Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
+        self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
+        self.suv_canvas.create_image(0, 0, image=self.suv_tk_img, anchor=NW)
+        self.suv_frame_label.config(text=self.SUV_F_TITLE % 2.0)
+        # 设置SUV滚动条
+        _range = self.suv_value_array.max() - self.suv_value_array.min()
+        _first = (2 / _range) * (1 - 0.3)
+        _first = min(_first, 0.7)
+        self.suv_scrl.set(_first, _first + 0.3)
+        # 加载PET图像
+        pet_image_path = self.pet_image_list[self.image_cursor - 1]
+        self.pet_tk_img = ImageTk.PhotoImage(
+            Image.open(pet_image_path).resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
+        self.pet_canvas.create_image(0, 0, image=self.pet_tk_img, anchor=NW)
+        self.pet_frame_label.config(text=self.PET_F_TITLE.format(self.image_cursor, len(self.pet_image_list)))
         # 如果存在放大标签图像，删除此图像
         self._zoomed_tk_img = None
         self.zoomed_canvas.delete(self.curr_zoomed_label_id)
@@ -462,9 +453,8 @@ class Labeler(object):
 
     def suv_scrl_scroll_callback(self, *args):
         """SUV滚动条滚动回调函数"""
-        if not self.load_mode:  # 未加载图像，就不会触发下面的函数
+        if not self.is_loaded:  # 未加载图像，就不会触发下面的函数
             return
-
         # 常量设置
         _len = 0.3  # 滚动条的长度占到整个滚动控件的比例
         _scrl_step = 0.5 * (1 - _len)  # 每次滚动多少， 0.5 * (1 - len)就是每次滚动50%
