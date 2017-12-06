@@ -15,6 +15,7 @@ from labeler_util.label_box import LabelBox
 from labeler_util.load_patient_info import load_patient_info
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
 from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
+from labeler_util.NormalizedImageGenerator import NormalizedImageGenerator as NIG
 from labeler_util.get_enlarged_area import enlarged_area
 from labeler_util.debug_mode import debug_mode
 from labeler_util.stripped_text import stripped_text
@@ -27,10 +28,10 @@ class Labeler(object):
         self.color_generator = gen_colors()  # 初始化颜色生成器，用来生成不同的颜色
         self.image_loader = ImageLoader()  # 初始化ImageLoader
         # 文件相关变量
-        self.load_mode = str()  # 目前有 CT, PET_CT 两种
+        self.load_mode = str()  # 目前有 CT, PET_CT 两种         # todo: delete load mode
         self.ct_workspace = str()  # CT workspace
         self.pet_workspace = str()  # PET workspace
-        self.ct_image_list = list()  # 加载CT图像的文件名列表（绝对路径）
+        self.ct_value_list = list()  # 加载CT值文件的文件名列表（绝对路径）
         self.pet_image_list = list()  # 加载PET图像的文件名列表（绝对路径）
         self.suv_value_list = list()  # 加载SUV值文件的文件名列表(绝对路径)
         self.image_cursor = -1  # 当前UI中显示的图片为第几张，取值时self.ct_image_list[self.image_cursor-1]
@@ -90,7 +91,7 @@ class Labeler(object):
         self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
         # 标注现在鼠标坐标
         self.ct_frame_label.config(
-            text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), event.x, event.y))
+            text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), event.x, event.y))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # SUV图像指示线
@@ -120,7 +121,7 @@ class Labeler(object):
             # 当前z分数
             _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
             self.pet_frame_label.config(text=self.PET_F_TITLE.format(
-                self.image_cursor, len(self.ct_image_list), "%.3f" % suv_value, "%+.3f" % _z_score))
+                self.image_cursor, len(self.ct_value_list), "%.3f" % suv_value, "%+.3f" % _z_score))
 
         # 画标签框
         if self.mouse_clicked:
@@ -211,12 +212,12 @@ class Labeler(object):
             return
 
         # 加载图像文件
-        self.image_loader.load_image(self.load_mode, self.cfg["image_output_suffix"],
+        self.image_loader.load_image(self.cfg["image_output_suffix"],
                                      self.ct_workspace,
                                      self.cfg['ct_output_folder_name'],
                                      self.pet_workspace,
                                      self.cfg['suv_output_folder_name'], self.cfg['pet_output_folder_name'])
-        self.ct_image_list = self.image_loader.cts
+        self.ct_value_list = self.image_loader.cts
         self.pet_image_list = self.image_loader.pets
         self.suv_value_list = self.image_loader.suvs
 
@@ -224,7 +225,7 @@ class Labeler(object):
         self.image_cursor = 1
 
         # 如果没有找到图片就提示
-        if len(self.ct_image_list) == 0:
+        if len(self.ct_value_list) == 0:
             showerror(title="错误", message="未找到图像！")
             return
 
@@ -259,7 +260,7 @@ class Labeler(object):
         if not self.load_mode:
             return
         # 如果没有下一张图像，报错
-        if self.image_cursor == len(self.ct_image_list):
+        if self.image_cursor == len(self.ct_value_list):
             showinfo(title="信息", message="已到达最后一张图像")
             return
         # 切换图像之前先保存当前图像label
@@ -307,11 +308,13 @@ class Labeler(object):
         self.status_label.config(text=_t)
 
     def _load_image(self):
+        # 加载CT值
+        ct_value_path = self.ct_value_list[self.image_cursor - 1]
+        self.ct_value_array = pickle.load(open(ct_value_path, 'rb'))
         # 加载CT图像
-        ct_image_path = self.ct_image_list[self.image_cursor - 1]
-        self.ct_tk_img = ImageTk.PhotoImage(Image.open(ct_image_path).resize([self._PSIZE, self._PSIZE]))
+        self.ct_tk_img = ImageTk.PhotoImage(Image.fromarray(NIG.arr_to_arr(self.ct_value_array)).resize([self._PSIZE, self._PSIZE]))
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
-        self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_image_list), 0, 0))
+        self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), 0, 0))
         # 如果是PET_CT模式
         if self.load_mode == 'PET_CT':
             # 加载SUV值
@@ -344,7 +347,7 @@ class Labeler(object):
         # 清除已有标签
         self.clear_label_callback()
         # 计算标签绝对路径(self.ct_workspace + _output_label_folder_name + _file_name)
-        _file_name = os.path.splitext(os.path.split(self.ct_image_list[self.image_cursor - 1])[-1])[0] + '.txt'
+        _file_name = os.path.splitext(os.path.split(self.ct_value_list[self.image_cursor - 1])[-1])[0] + '.txt'
         self.label_file_path = os.path.join(self.ct_workspace, self.cfg['label_output_folder'], _file_name)
         # 加载标签(如果有)
         if os.path.exists(self.label_file_path):
@@ -416,7 +419,7 @@ class Labeler(object):
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
             # 最后，显示一下放大的区域
-            _ctimg = Image.open(self.ct_image_list[self.image_cursor - 1])
+            _ctimg = Image.fromarray(NIG.arr_to_arr(self.ct_value_array))
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
