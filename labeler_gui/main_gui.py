@@ -14,8 +14,7 @@ from labeler_util.gen_colors import gen_colors
 from labeler_util.label_box import LabelBox
 from labeler_util.load_patient_info import load_patient_info
 from labeler_util.patient_remark import load_patient_remark, save_patient_remark
-from labeler_util.ThresholdImageGenerator import ThresholdImageGenerator as TIG
-from labeler_util.NormalizedImageGenerator import NormalizedImageGenerator as NIG
+from labeler_util.ImageProcessor import ImageProcessor
 from labeler_util.get_enlarged_area import enlarged_area
 from labeler_util.debug_mode import debug_mode
 from labeler_util.stripped_text import stripped_text
@@ -27,6 +26,7 @@ class Labeler(object):
         self.cfg = p_cfg  # 加载外部配置
         self.color_generator = gen_colors()  # 初始化颜色生成器，用来生成不同的颜色
         self.image_loader = ImageLoader()  # 初始化ImageLoader
+        self.img_prcsr = ImageProcessor()  # 初始化ImageProcessor
         # 文件相关变量
         self.load_mode = str()  # 目前有 CT, PET_CT 两种         # todo: delete load mode
         self.ct_workspace = str()  # CT workspace
@@ -314,7 +314,7 @@ class Labeler(object):
         ct_value_path = self.ct_value_list[self.image_cursor - 1]
         self.ct_value_array = pickle.load(open(ct_value_path, 'rb'))
         # 加载CT图像
-        _ct_img = Image.fromarray(NIG.normalized_image(self.ct_value_array)).resize([self._PSIZE, self._PSIZE])
+        _ct_img = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array)).resize([self._PSIZE, self._PSIZE])
         self.ct_tk_img = ImageTk.PhotoImage(_ct_img)
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
         self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), 0, 0))
@@ -324,7 +324,7 @@ class Labeler(object):
             suv_value_path = self.suv_value_list[self.image_cursor - 1]
             self.suv_value_array = pickle.load(open(suv_value_path, 'rb'))
             # 加载SUV图像
-            _arr = TIG.arr_to_arr(self.suv_value_array, 2.0)
+            _arr = self.img_prcsr.threshold_image(self.suv_value_array, 2.0)
             self.suv_tk_img = ImageTk.PhotoImage(
                 Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
             self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
@@ -422,7 +422,7 @@ class Labeler(object):
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
             # 最后，显示一下放大的区域
-            _ctimg = Image.fromarray(NIG.normalized_image(self.ct_value_array))
+            _ctimg = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array))
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
@@ -476,7 +476,7 @@ class Labeler(object):
         actual_suv = _start_suv + (_end_suv - _start_suv) * suv_scrl_progress
 
         # 根据SUV值生成阈值图像
-        _arr = TIG.arr_to_arr(self.suv_value_array, actual_suv)
+        _arr = self.img_prcsr.threshold_image(self.suv_value_array, actual_suv)
         self.suv_tk_img = ImageTk.PhotoImage(
             Image.fromarray(_arr, 'L').resize([self._PSIZE, self._PSIZE], resample=Image.BILINEAR))
         self.suv_canvas.config(width=self._PSIZE, height=self._PSIZE)
