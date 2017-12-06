@@ -312,7 +312,8 @@ class Labeler(object):
         ct_value_path = self.ct_value_list[self.image_cursor - 1]
         self.ct_value_array = pickle.load(open(ct_value_path, 'rb'))
         # 加载CT图像
-        self.ct_tk_img = ImageTk.PhotoImage(Image.fromarray(NIG.arr_to_arr(self.ct_value_array)).resize([self._PSIZE, self._PSIZE]))
+        _ct_img = Image.fromarray(NIG.normalized_image(self.ct_value_array)).resize([self._PSIZE, self._PSIZE])
+        self.ct_tk_img = ImageTk.PhotoImage(_ct_img)
         self.ct_canvas.create_image(0, 0, image=self.ct_tk_img, anchor=NW)
         self.ct_frame_label.config(text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), 0, 0))
         # 如果是PET_CT模式
@@ -419,7 +420,7 @@ class Labeler(object):
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
             # 最后，显示一下放大的区域
-            _ctimg = Image.fromarray(NIG.arr_to_arr(self.ct_value_array))
+            _ctimg = Image.fromarray(NIG.normalized_image(self.ct_value_array))
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
