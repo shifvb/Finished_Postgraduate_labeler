@@ -426,14 +426,14 @@ class Labeler(object):
             self.curr_ct_label_id = None
             self.curr_pet_label_id = None
             # 最后，显示一下放大的区域
-            _ctimg = Image.fromarray(self.img_prcsr.norm_image(self.ct_value_array.transpose()))  # 注意！需要转秩！
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
-            _zoomed_coordinates = [int(_ * _ctimg.width) for _ in _zoomed_coordinates]
-            _arr = np.array(_ctimg)[
+            _arr = self.img_prcsr.norm_image(self.ct_value_array)
+            _zoomed_coordinates = [int(_ * _arr.shape[0]) for _ in _zoomed_coordinates]
+            _arr = _arr.transpose()[  # 注意！此处需要转秩！因为此处按照row-column的方式索引图像，但是加载的图像矩阵和用来显示的图像矩阵都必须是column-row风格的
                    _zoomed_coordinates[0]: _zoomed_coordinates[2],
-                   _zoomed_coordinates[1]: _zoomed_coordinates[3]]
+                   _zoomed_coordinates[1]: _zoomed_coordinates[3]].transpose()
             _img = Image.fromarray(_arr, 'L')
             self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
             self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
