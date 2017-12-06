@@ -32,8 +32,10 @@ class Labeler(object):
         self.ct_workspace = str()  # CT workspace
         self.pet_workspace = str()  # PET workspace
         self.ct_value_list = list()  # 加载CT值文件的文件名列表（绝对路径）
+        self.ct_value_array = None
         self.pet_image_list = list()  # 加载PET图像的文件名列表（绝对路径）
         self.suv_value_list = list()  # 加载SUV值文件的文件名列表(绝对路径)
+        self.suv_value_array = None
         self.image_cursor = -1  # 当前UI中显示的图片为第几张，取值时self.ct_image_list[self.image_cursor-1]
         self.label_file_path = None  # 用来保存当前图片对应label的绝对路径
         # GUI相关变量
