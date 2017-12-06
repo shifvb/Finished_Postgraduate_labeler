@@ -51,8 +51,10 @@ class Labeler(object):
         self.pet_label_id_list = []
         self.curr_ct_label_id = -1  # 用来储存当前创建的标签框id的变量
         self.curr_ct_suv_value_id = -1  # 用来显示当前SUV值的id的变量
-        self.curr_pet_label_id = -1
+        self.curr_ct_hu_value_id = -1  # 用来显示当前Hu值的id的变量
+        self.curr_pet_label_id = -1  # 用来存储当前创建的标签框id的变量
         self.curr_pet_suv_value_id = -1  # 用来显示当前SUV值的id的变量
+        self.curr_pet_hu_value_id = -1  # PET面板上存储显示Hu值的id的变量
         self.curr_zoomed_label_id = -1  # 用来存储 当前创建的 放大标签图像上的 标签框id的变量
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
@@ -97,36 +99,42 @@ class Labeler(object):
         # 标注现在鼠标坐标
         self.ct_frame_label.config(
             text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), event.x, event.y))
-        # 如果是PET_CT模式
-        if self.load_mode == 'PET_CT':
-            # SUV图像指示线
-            self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
-            self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
-            self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
-            self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
-            # PET图像指示线
-            self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
-            self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
-            self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
-            self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
-            # 当前原始SUV值
-            _x = min(int(event.x / self._PSIZE * self.suv_value_array.shape[0]), self.suv_value_array.shape[0] - 1)
-            _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
-            # 当前SUV值
-            suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
-            self.ct_canvas.delete(self.curr_ct_suv_value_id)
-            self.curr_ct_suv_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 10),
-                                                                   text="SUV: %.3f" % suv_value, anchor=NW,
-                                                                   font=self._MID_FONT, fill="yellow")
-            self.pet_canvas.delete(self.curr_pet_suv_value_id)
-            self.curr_pet_suv_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 10),
-                                                                     text="SUV: %.3f" % suv_value, anchor=NW,
-                                                                     font=self._MID_FONT, fill="yellow")
 
-            # 当前z分数
-            _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
-            self.pet_frame_label.config(text=self.PET_F_TITLE.format(
-                self.image_cursor, len(self.ct_value_list), "%.3f" % suv_value, "%+.3f" % _z_score))
+        # SUV图像指示线
+        self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
+        self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
+        self.suv_canvas.delete(self.suv_vert_line_id) if hasattr(self, "suv_vert_line_id") else None
+        self.suv_vert_line_id = self.suv_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+        # PET图像指示线
+        self.pet_canvas.delete(self.pet_hori_line_id) if hasattr(self, "pet_hori_line_id") else None
+        self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
+        self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
+        self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+        # 当前SUV值
+        _x = min(int(event.x / self._PSIZE * self.suv_value_array.shape[0]), self.suv_value_array.shape[0] - 1)
+        _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
+        suv_value = self.suv_value_array[_x][_y] if self.suv_value_array[_x][_y] > 1e-2 else 0.0
+        self.ct_canvas.delete(self.curr_ct_suv_value_id)
+        self.curr_ct_suv_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 10), anchor=NW, fill="yellow",
+                                                               text="SUV: %.3f" % suv_value, font=self._MID_FONT)
+        self.pet_canvas.delete(self.curr_pet_suv_value_id)
+        self.curr_pet_suv_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 10), anchor=NW, fill="yellow",
+                                                                 text="SUV: %.3f" % suv_value, font=self._MID_FONT)
+        # 当前Hu值
+        _x = min(int(event.x / self._PSIZE * self.ct_hu_array.shape[0]), self.ct_hu_array.shape[0] - 1)
+        _y = min(int(event.y / self._PSIZE * self.ct_hu_array.shape[1]), self.ct_hu_array.shape[1] - 1)
+        hu_value = self.ct_hu_array[_x][_y]
+        self.ct_canvas.delete(self.curr_ct_hu_value_id)
+        self.curr_ct_hu_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 30), anchor=NW, fill="yellow",
+                                                              text="Hu : {:>5}".format(hu_value), font=self._MID_FONT)
+        self.pet_canvas.delete(self.curr_pet_hu_value_id)
+        self.curr_pet_hu_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 30), anchor=NW, fill="yellow",
+                                                                text="Hu : {:>5}".format(hu_value), font=self._MID_FONT)
+
+        # 当前z分数
+        _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
+        self.pet_frame_label.config(text=self.PET_F_TITLE.format(
+            self.image_cursor, len(self.ct_value_list), "%.3f" % suv_value, "%+.3f" % _z_score))
 
         # 画标签框
         if self.mouse_clicked:
