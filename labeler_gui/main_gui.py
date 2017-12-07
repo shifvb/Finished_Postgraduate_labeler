@@ -53,15 +53,17 @@ class Labeler(object):
         self.curr_ct_label_id = -1  # 用来储存当前创建的标签框id的变量
         self.curr_ct_suv_value_id = -1  # 用来显示当前SUV值的id的变量
         self.curr_ct_hu_value_id = -1  # 用来显示当前Hu值的id的变量
+        self.curr_ct_z_score_value_id = -1
         self.curr_pet_label_id = -1  # 用来存储当前创建的标签框id的变量
         self.curr_pet_suv_value_id = -1  # 用来显示当前SUV值的id的变量
         self.curr_pet_hu_value_id = -1  # PET面板上存储显示Hu值的id的变量
+        self.curr_pet_z_score_value_id = -1
         self.curr_zoomed_label_id = -1  # 用来存储 当前创建的 放大标签图像上的 标签框id的变量
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
         self._MID_FONT = Font(size=13)
-        self.CT_F_TITLE = "CT ({:03} / {:03}) x: {:03} y: {:03}"
+        self.CT_F_TITLE = "CT ({:03} / {:03})"
         self.PET_F_TITLE = "PET ({:03} / {:03})"
         self.SUV_F_TITLE = "PET (SUV > %.3f)"
         # GUI_鼠标
@@ -87,19 +89,13 @@ class Labeler(object):
         self._cancel_create_label(event)
 
     def mouse_move_callback(self, event):
-        # 没有加载图像不处理鼠标移动
-        if not self.is_loaded:
+        if not self.is_loaded:  # 没有加载图像不处理鼠标移动
             return
-
         # CT图像指示线
         self.ct_canvas.delete(self.horizontal_line_id) if hasattr(self, "horizontal_line_id") else None
         self.horizontal_line_id = self.ct_canvas.create_line(0, event.y, self._PSIZE, event.y, width=1, fill='yellow')
         self.ct_canvas.delete(self.vertical_line_id) if hasattr(self, "vertical_line_id") else None
         self.vertical_line_id = self.ct_canvas.create_line(event.x, 0, event.x, self._PSIZE, width=1, fill='yellow')
-        # 标注现在鼠标坐标
-        self.ct_frame_label.config(
-            text=self.CT_F_TITLE.format(self.image_cursor, len(self.ct_value_list), event.x, event.y))
-
         # SUV图像指示线
         self.suv_canvas.delete(self.suv_hori_line_id) if hasattr(self, "suv_hori_line_id") else None
         self.suv_hori_line_id = self.suv_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
@@ -110,6 +106,9 @@ class Labeler(object):
         self.pet_hori_line_id = self.pet_canvas.create_line(0, event.y, self._PSIZE, event.y, fill='yellow')
         self.pet_canvas.delete(self.pet_vert_line_id) if hasattr(self, "pet_vert_line_id") else None
         self.pet_vert_line_id = self.pet_canvas.create_line(event.x, 0, event.x, self._PSIZE, fill='yellow')
+
+        # 标注现在鼠标坐标
+        self.img_coordinate_label.config(text="  x,y  : ({:>3}, {:>3})".format(event.x, event.y))
         # 当前SUV值
         _x = min(int(event.x / self._PSIZE * self.suv_value_array.shape[0]), self.suv_value_array.shape[0] - 1)
         _y = min(int(event.y / self._PSIZE * self.suv_value_array.shape[1]), self.suv_value_array.shape[1] - 1)
@@ -120,6 +119,7 @@ class Labeler(object):
         self.pet_canvas.delete(self.curr_pet_suv_value_id)
         self.curr_pet_suv_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 10), anchor=NW, fill="yellow",
                                                                  text="SUV: %.3f" % suv_value, font=self._MID_FONT)
+        self.img_SUV_label.config(text="  SUV  :  %.3f" % suv_value)
         # 当前Hu值
         _x = min(int(event.x / self._PSIZE * self.ct_hu_array.shape[0]), self.ct_hu_array.shape[0] - 1)
         _y = min(int(event.y / self._PSIZE * self.ct_hu_array.shape[1]), self.ct_hu_array.shape[1] - 1)
@@ -130,12 +130,18 @@ class Labeler(object):
         self.pet_canvas.delete(self.curr_pet_hu_value_id)
         self.curr_pet_hu_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 30), anchor=NW, fill="yellow",
                                                                 text="Hu : {:>5}".format(hu_value), font=self._MID_FONT)
-
+        self.img_Hu_label.config(text="  Hu   : {:>6}".format(hu_value))
         # 当前z分数
         _z_score = (suv_value - self.suv_value_array.mean()) / self.suv_value_array.std()
-        self.pet_frame_label.config(text=self.PET_F_TITLE.format(
-            self.image_cursor, len(self.ct_value_list), "%.3f" % suv_value, "%+.3f" % _z_score))
-
+        self.img_z_score_label.config(text="z-score: %+.3f" % _z_score)
+        self.ct_canvas.delete(self.curr_ct_z_score_value_id)
+        self.curr_ct_z_score_value_id = self.ct_canvas.create_text((event.x + 20, event.y + 50), anchor=NW,
+                                                                   fill="yellow", text="z-score : %.3f" % _z_score,
+                                                                   font=self._MID_FONT)
+        self.pet_canvas.delete(self.curr_pet_z_score_value_id)
+        self.curr_pet_z_score_value_id = self.pet_canvas.create_text((event.x + 20, event.y + 50), anchor=NW,
+                                                                     fill="yellow", text="z-score : %.3f" % _z_score,
+                                                                     font=self._MID_FONT)
         # 画标签框
         if self.mouse_clicked:
             self.ct_canvas.delete(self.curr_ct_label_id) if self.curr_ct_label_id else None
@@ -617,9 +623,12 @@ class Labeler(object):
         next_img_btn.config(font=self._BIG_FONT)
         next_img_btn.pack(side=LEFT, padx=7)
 
+        _upper_right_of_upper_right_frame = Frame(upper_right_frame)
+        _upper_right_of_upper_right_frame.grid(row=0, column=1, rowspan=2, sticky=NW, padx=5)
+
         # 2.5 病人信息面板
-        patient_info_frame = LabelFrame(upper_right_frame, text="基本信息", font=self._MID_FONT)
-        patient_info_frame.grid(row=0, column=1, rowspan=2, sticky=NW, padx=5)
+        patient_info_frame = LabelFrame(_upper_right_of_upper_right_frame, text="基本信息", font=self._MID_FONT)
+        patient_info_frame.grid(row=0, column=0)
         patient_info_k_frame = Frame(patient_info_frame)  # k for "key", means the name of the value
         patient_info_k_frame.grid(row=0, column=0, sticky=W)
         patient_info_v_frame = Frame(patient_info_frame)
@@ -663,6 +672,18 @@ class Labeler(object):
             patient_name_label.grid(row=1, column=0, sticky=W, pady=_p_pady)
             self.patient_name_value = Label(patient_info_v_frame, font=self._BIG_FONT)
             self.patient_name_value.grid(row=1, column=0, sticky=E, pady=_p_pady)
+
+        # 2.6 当前鼠标所对应图像信息面板
+        img_info_frame = LabelFrame(_upper_right_of_upper_right_frame, text="图像信息", font=self._MID_FONT)
+        img_info_frame.grid(row=1, column=0, sticky=NSEW)
+        self.img_coordinate_label = Label(img_info_frame, text="  x,y  :", font=self._BIG_FONT)
+        self.img_coordinate_label.grid(row=0, column=0, sticky=NW)
+        self.img_Hu_label = Label(img_info_frame, text="  Hu   :", font=self._BIG_FONT)
+        self.img_Hu_label.grid(row=1, column=0, sticky=NW)
+        self.img_SUV_label = Label(img_info_frame, text="  SUV  :", font=self._BIG_FONT)
+        self.img_SUV_label.grid(row=2, column=0, sticky=NW)
+        self.img_z_score_label = Label(img_info_frame, text="z-score:", font=self._BIG_FONT)
+        self.img_z_score_label.grid(row=3, column=0, sticky=NW)
 
         # 3. 右下角面板
         bottom_right_frame = Frame(self.root)
