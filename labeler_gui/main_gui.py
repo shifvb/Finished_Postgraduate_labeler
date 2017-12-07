@@ -59,6 +59,7 @@ class Labeler(object):
         self.curr_pet_hu_value_id = -1  # PET面板上存储显示Hu值的id的变量
         self.curr_pet_z_score_value_id = -1
         self.curr_zoomed_label_id = -1  # 用来存储 当前创建的 放大标签图像上的 标签框id的变量
+        self.zoom_type_var = IntVar(value=0)
         # GUI相关常量
         self._PSIZE = 475  # PSIZE: panel size, 显示图像大小
         self._BIG_FONT = Font(size=15)  # big font size
@@ -435,8 +436,10 @@ class Labeler(object):
             _zoomed_coordinates = enlarged_area(x1 / self._PSIZE, y1 / self._PSIZE, x2 / self._PSIZE, y2 / self._PSIZE,
                                                 self.cfg["enlarge_coefficient"],
                                                 self.cfg["min_ratio_of_enlarged_image"])
-            _arr = self.img_prcsr.norm_image(self.ct_value_array)
-            _zoomed_coordinates = [int(_ * _arr.shape[0]) for _ in _zoomed_coordinates]
+            _enlarge_ct = self.zoom_type_var.get() == 0
+            _arr = self.img_prcsr.norm_image(self.ct_value_array) if _enlarge_ct else self.img_prcsr.norm_image(
+                self.pet_value_array)
+            _zoomed_coordinates[0:4] = [int(_ * _arr.shape[0]) for _ in _zoomed_coordinates[0:4]]
             _arr = _arr.transpose()[  # 注意！此处需要转秩！因为此处按照row-column的方式索引图像，但是加载的图像矩阵和用来显示的图像矩阵都必须是column-row风格的
                    _zoomed_coordinates[0]: _zoomed_coordinates[2],
                    _zoomed_coordinates[1]: _zoomed_coordinates[3]].transpose()
@@ -444,6 +447,7 @@ class Labeler(object):
             self._zoomed_tk_img = ImageTk.PhotoImage(_img.resize([self._PSIZE, self._PSIZE]))
             self.zoomed_canvas.create_image(0, 0, image=self._zoomed_tk_img, anchor=NW)
             # 在放大的区域上显示标签框
+            _zoomed_coordinates[4:8] = [int(_ * self._PSIZE) for _ in _zoomed_coordinates[4:8]]
             self.zoomed_canvas.delete(self.curr_zoomed_label_id)
             self.curr_zoomed_label_id = self.zoomed_canvas.create_rectangle(_zoomed_coordinates[4],
                                                                             _zoomed_coordinates[5],
@@ -533,8 +537,16 @@ class Labeler(object):
         # 1.3 显示放大区域的面板
         zoomed_frame = Frame(self.root)
         zoomed_frame.grid(row=1, column=0, sticky=NW, padx=5)
-        zoomed_frame_label = Label(zoomed_frame, text="局部放大区域", font=self._MID_FONT)
-        zoomed_frame_label.pack()
+        _zoomed_upper_frame = Frame(zoomed_frame)
+        _zoomed_upper_frame.pack()
+        zoomed_frame_label = Label(_zoomed_upper_frame, text="局部放大区域", font=self._MID_FONT)
+        zoomed_frame_label.grid(row=0, column=0)
+
+        ct_rbtn = Radiobutton(_zoomed_upper_frame, variable=self.zoom_type_var, value=0, text="CT")
+        ct_rbtn.grid(row=0, column=1)
+        pet_rbtn = Radiobutton(_zoomed_upper_frame, variable=self.zoom_type_var, value=1, text="PET")
+        pet_rbtn.grid(row=0, column=2)
+
         zoomed_area_frame = LabelFrame(zoomed_frame)
         zoomed_area_frame.pack()
         self.zoomed_canvas = Canvas(zoomed_area_frame, height=self._PSIZE, width=self._PSIZE)
