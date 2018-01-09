@@ -502,7 +502,7 @@ class Labeler(object):
     def init_gui(self):
         # 0. 设置root
         self.root.state("zoomed")  # 窗口最大化，只对windows有效 root.geometry("{}x{}-0+0".format(*self.root.maxsize()))
-        self.root.title("医用病理图像标注系统")
+        self.root.title("PET/CT图像标注系统")
         self.root.protocol("WM_DELETE_WINDOW", exit_callback)  # 绑定关闭窗口事件
         self.root.bind("<Escape>", self.key_esc_callback)  # press <Escape> to cancel current bbox
         self.root.bind("<Left>", self.prev_image_btn_callback)  # press 'Left Arrow' to go backforward
